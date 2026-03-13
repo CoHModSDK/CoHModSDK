@@ -77,21 +77,21 @@ extern "C" {
 namespace ModSDK {
 	namespace Memory {
 		/**
-		 * @brief Returns a handle to the module that contains the real game code.
+		 * @brief Returns a handle to the module that contains the original game code.
 		 *
-		 * @return HMODULE - Handle to `WW2Mod.original.dll` when present, otherwise `WW2Mod.dll`.
+		 * @return HMODULE - Handle to the original `WW2Mod.dll`.
 		 */
 		HMODULE GetGameModuleHandle();
 
 		/**
 		 * @brief Scans a module for a byte pattern signature.
 		 *
-		 * Use `GetGameModuleHandle()` when you want to scan the real game module.
+		 * Use `GetGameModuleHandle()` when you want to scan the original game module.
 		 *
 		 * @param moduleHandle Handle to the module to scan.
 		 * @param signature Pattern string (e.g., "48 8B ?? ?? ?? ?? ?? 48 8B").
 		 * @param reportError Whether to show an error if the pattern is not found.
-		 * @return std::uintptr_t Address where the pattern was found, or 0 if not found.
+		 * @return std::uintptr_t Address where the pattern was found or 0 if not found.
 		 */
 		std::uintptr_t FindPattern(HMODULE moduleHandle, const char* signature, bool reportError = true);
 
