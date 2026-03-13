@@ -1,18 +1,17 @@
 #include <Windows.h>
 #include <format>
+#include <stdexcept>
+#include <cstring>
 #include <vector>
 
-#include "MinHook.h"
 #include "../include/CoHModSDK.hpp"
-
-#pragma comment(lib, "psapi.lib")
+#include "hooks/HookEngine.hpp"
 
 namespace ModSDK {
-	bool g_HooksInitialized = false;
-
     namespace Memory {
         namespace {
             constexpr const char* kOriginalGameModuleName = "WW2Mod.original.dll";
+            constexpr const char* kWrappedGameModuleName = "WW2Mod.dll";
 
             std::string DescribeModule(HMODULE moduleHandle) {
                 if (!moduleHandle) {
@@ -93,7 +92,12 @@ namespace ModSDK {
         }
 
         HMODULE GetGameModuleHandle() {
-            return GetModuleHandleA(kOriginalGameModuleName);
+            HMODULE moduleHandle = GetModuleHandleA(kOriginalGameModuleName);
+            if (moduleHandle == nullptr) {
+                moduleHandle = GetModuleHandleA(kWrappedGameModuleName);
+            }
+
+            return moduleHandle;
         }
 
         std::uintptr_t FindPattern(HMODULE moduleHandle, const char* signature, bool reportError) {
@@ -109,47 +113,24 @@ namespace ModSDK {
     }
 
     namespace Hooks {
-        bool InitializeHooks() {
-            if ((!g_HooksInitialized) && (MH_Initialize() == MH_OK)) {
-                g_HooksInitialized = true;
-            }
-            return g_HooksInitialized;
-        }
-
         bool CreateHook(void* targetFunction, void* detourFunction, void** originalFunction) {
-            if (!InitializeHooks()) {
-                return false;
-            }
-
-            if (MH_CreateHook(targetFunction, detourFunction, originalFunction) != MH_OK) {
-                return false;
-            }
-
-            return true;
+            return HookEngine::CreateHook(targetFunction, detourFunction, originalFunction);
         }
 
 		bool EnableHook(void* targetFunction) {
-            if (!InitializeHooks()) {
-                return false;
-            }
-
-			return (MH_EnableHook(targetFunction) == MH_OK);
+			return HookEngine::EnableHook(targetFunction);
 		}
 
         bool EnableAllHooks() {
-			return EnableHook(MH_ALL_HOOKS);
+			return HookEngine::EnableAllHooks();
         }
 
 		bool DisableHook(void* targetFunction) {
-            if (!g_HooksInitialized) {
-                return false;
-            }
-
-			return (MH_DisableHook(targetFunction) == MH_OK);
+			return HookEngine::DisableHook(targetFunction);
 		}
 
         bool DisableAllHooks() {
-            return DisableHook(MH_ALL_HOOKS);
+            return HookEngine::DisableAllHooks();
         }
     }
 }
