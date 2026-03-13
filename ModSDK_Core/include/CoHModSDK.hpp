@@ -1,6 +1,6 @@
 /**
  *  CoHModSDK - The lightweight modding SDK for Company of Heroes
- *  Copyright (C) 2025 Tosox
+ *  Copyright (C) 2025-2026 Tosox
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -29,8 +29,6 @@
 #pragma once
 
 #include <Windows.h>
-#include <cstddef>
-#include <cstdint>
 
 extern "C" {
 	/**
@@ -79,14 +77,23 @@ extern "C" {
 namespace ModSDK {
 	namespace Memory {
 		/**
+		 * @brief Returns a handle to the module that contains the real game code.
+		 *
+		 * @return HMODULE - Handle to `WW2Mod.original.dll` when present, otherwise `WW2Mod.dll`.
+		 */
+		HMODULE GetGameModuleHandle();
+
+		/**
 		 * @brief Scans a module for a byte pattern signature.
 		 *
-		 * @param moduleName Name of the module (e.g., "WW2Mod.dll").
+		 * Use `GetGameModuleHandle()` when you want to scan the real game module.
+		 *
+		 * @param moduleHandle Handle to the module to scan.
 		 * @param signature Pattern string (e.g., "48 8B ?? ?? ?? ?? ?? 48 8B").
 		 * @param reportError Whether to show an error if the pattern is not found.
 		 * @return std::uintptr_t Address where the pattern was found, or 0 if not found.
 		 */
-		std::uintptr_t FindPattern(const char* moduleName, const char* signature, bool reportError = true);
+		std::uintptr_t FindPattern(HMODULE moduleHandle, const char* signature, bool reportError = true);
 
 		/**
 		 * @brief Patches memory by copying bytes to a destination address.
