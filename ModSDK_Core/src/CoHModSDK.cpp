@@ -9,7 +9,7 @@
 
 namespace ModSDK {
     namespace Memory {
-        std::uintptr_t FindPatternInModule(const char* moduleName, const char* signature, bool reportError) {
+        std::uintptr_t FindPattern(const char* moduleName, const char* signature, bool reportError) {
             HMODULE moduleHandle = GetModuleHandleA(moduleName);
             if (!moduleHandle) {
                 if (reportError) {
