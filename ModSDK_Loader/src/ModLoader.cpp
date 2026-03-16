@@ -20,7 +20,7 @@ namespace {
     using GetModStringFunc = const char*(*)();
 
     Logger logger;
-    std::vector<HMODULE> g_loadedMods;
+    std::vector<std::pair<std::string, HMODULE>> g_loadedMods;
 
     Logger& GetLogger() {
         if (!logger.IsOpen()) {
@@ -54,7 +54,7 @@ namespace {
         return value;
     }
 
-    void LogModMetadata(HMODULE modHandle, const std::string& path) {
+    void LogModMetadata(HMODULE modHandle, const std::string& name) {
         const std::string modName = GetExportedModString(modHandle, "GetModName");
         const std::string modVersion = GetExportedModString(modHandle, "GetModVersion");
         const std::string modAuthor = GetExportedModString(modHandle, "GetModAuthor");
@@ -63,7 +63,7 @@ namespace {
             return;
         }
 
-        std::string message = "Mod metadata for " + path + ": ";
+        std::string message = "Mod metadata for " + name + ": ";
         message += "name=" + (modName.empty() ? std::string("<unknown>") : modName);
         message += ", version=" + (modVersion.empty() ? std::string("<unknown>") : modVersion);
         message += ", author=" + (modAuthor.empty() ? std::string("<unknown>") : modAuthor);
@@ -94,35 +94,35 @@ namespace Loader {
             const std::string path = (modsDirectory / line).string();
             HMODULE modHandle = LoadLibraryA(path.c_str());
             if (!modHandle) {
-                GetLogger().LogError("Failed to load mod: " + path);
+                GetLogger().LogError("Failed to load mod: " + line);
                 continue;
             }
 
-            g_loadedMods.push_back(modHandle);
-            GetLogger().LogInfo("Loaded mod: " + path);
-            LogModMetadata(modHandle, path);
+            g_loadedMods.push_back(std::make_pair(line, modHandle));
+            GetLogger().LogInfo("Loaded mod: " + line);
+            LogModMetadata(modHandle, line);
 
             if (auto onLoad = reinterpret_cast<OnSDKLoadFunc>(GetProcAddress(modHandle, "OnSDKLoad"))) {
                 onLoad();
-                GetLogger().LogInfo("Called OnSDKLoad for " + path);
+				GetLogger().LogDebug("Called OnSDKLoad for " + line);
             }
         }
     }
 
     void NotifyModsGameStart() {
-        for (auto mod : g_loadedMods) {
-            if (auto onStart = reinterpret_cast<OnGameStartFunc>(GetProcAddress(mod, "OnGameStart"))) {
+        for (auto& modEntry : g_loadedMods) {
+            if (auto onStart = reinterpret_cast<OnGameStartFunc>(GetProcAddress(modEntry.second, "OnGameStart"))) {
                 onStart();
-                GetLogger().LogInfo("Called OnGameStart for a mod");
+                GetLogger().LogDebug("Called OnGameStart for " + modEntry.first);
             }
         }
     }
 
     void NotifyModsGameShutdown() {
-        for (auto mod : g_loadedMods) {
-            if (auto onShutdown = reinterpret_cast<OnGameShutdownFunc>(GetProcAddress(mod, "OnGameShutdown"))) {
+        for (auto& modEntry : g_loadedMods) {
+            if (auto onShutdown = reinterpret_cast<OnGameShutdownFunc>(GetProcAddress(modEntry.second, "OnGameShutdown"))) {
                 onShutdown();
-                GetLogger().LogInfo("Called OnGameShutdown for a mod");
+                GetLogger().LogDebug("Called OnGameShutdown for " + modEntry.first);
             }
         }
     }
