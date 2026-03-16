@@ -32,9 +32,11 @@ jobs:
     - name: Create Release Zips
       run: |
         mkdir -p CoHModSDK_Core
+        mkdir -p CoHModSDK_Core/include
         mkdir -p CoHModSDK_Loader
         cp -a artifact/CoHModSDK.lib CoHModSDK_Core/
-        cp -a artifact/CoHModSDKLoader.dll CoHModSDK_Loader/
+        cp -a ModSDK_Core/include/CoHModSDK.hpp CoHModSDK_Core/include/
+        cp -a artifact/CoHModSDKLoader.dll CoHModSDK_Loader/WW2Mod.dll
         cd CoHModSDK_Core
         zip -r ../CoHModSDK_Core-${{ github.event.inputs.build-ver }}.zip .
         cd ../CoHModSDK_Loader

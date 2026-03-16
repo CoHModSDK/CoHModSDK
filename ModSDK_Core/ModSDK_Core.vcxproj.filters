@@ -5,25 +5,10 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="external">
-      <UniqueIdentifier>{b66b43a8-0270-461a-891f-9aeb8220625f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="external\MinHook">
-      <UniqueIdentifier>{3d4b16a5-6d9a-4452-b7ce-7fb84ea3e50e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="external\MinHook\include">
-      <UniqueIdentifier>{c8cfda3a-a379-49da-b46d-e853b31f28f8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="include">
       <UniqueIdentifier>{79919f90-f2ca-4f90-87c0-2a6384721cfa}</UniqueIdentifier>
     </Filter>
-    <Filter Include="external\MinHook\src">
-      <UniqueIdentifier>{2b63b361-7b0b-43ac-a50c-cacae0c8a5d6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="external\MinHook\src\hde">
-      <UniqueIdentifier>{81622716-ff51-4670-a3fa-b0114a314f18}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="licenses">
+    <Filter Include="src\hooks">
       <UniqueIdentifier>{05626f60-edbc-42e0-a0a4-b713129339f9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -31,54 +16,16 @@
     <ClCompile Include="src\CoHModSDK.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="external\MinHook\src\buffer.c">
-      <Filter>external\MinHook\src</Filter>
-    </ClCompile>
-    <ClCompile Include="external\MinHook\src\hook.c">
-      <Filter>external\MinHook\src</Filter>
-    </ClCompile>
-    <ClCompile Include="external\MinHook\src\trampoline.c">
-      <Filter>external\MinHook\src</Filter>
-    </ClCompile>
-    <ClCompile Include="external\MinHook\src\hde\hde32.c">
-      <Filter>external\MinHook\src\hde</Filter>
-    </ClCompile>
-    <ClCompile Include="external\MinHook\src\hde\hde64.c">
-      <Filter>external\MinHook\src\hde</Filter>
+    <ClCompile Include="src\hooks\HookEngine.cpp">
+      <Filter>src\hooks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="external\MinHook\include\MinHook.h">
-      <Filter>external\MinHook\include</Filter>
-    </ClInclude>
-    <ClInclude Include="external\MinHook\src\buffer.h">
-      <Filter>external\MinHook\src</Filter>
-    </ClInclude>
-    <ClInclude Include="external\MinHook\src\trampoline.h">
-      <Filter>external\MinHook\src</Filter>
-    </ClInclude>
-    <ClInclude Include="external\MinHook\src\hde\hde32.h">
-      <Filter>external\MinHook\src\hde</Filter>
-    </ClInclude>
-    <ClInclude Include="external\MinHook\src\hde\hde64.h">
-      <Filter>external\MinHook\src\hde</Filter>
-    </ClInclude>
-    <ClInclude Include="external\MinHook\src\hde\pstdint.h">
-      <Filter>external\MinHook\src\hde</Filter>
-    </ClInclude>
-    <ClInclude Include="external\MinHook\src\hde\table32.h">
-      <Filter>external\MinHook\src\hde</Filter>
-    </ClInclude>
-    <ClInclude Include="external\MinHook\src\hde\table64.h">
-      <Filter>external\MinHook\src\hde</Filter>
-    </ClInclude>
     <ClInclude Include="include\CoHModSDK.hpp">
       <Filter>include</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="licenses\MinHook.txt">
-      <Filter>licenses</Filter>
-    </Text>
+    <ClInclude Include="src\hooks\HookEngine.hpp">
+      <Filter>src\hooks</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

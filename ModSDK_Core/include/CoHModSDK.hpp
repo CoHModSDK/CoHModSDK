@@ -1,29 +1,16 @@
 /**
  *  CoHModSDK - The lightweight modding SDK for Company of Heroes
- *  Copyright (C) 2025 Tosox
- *  All rights reserved.
+ *  Copyright (c) 2026 Tosox
  *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
+ *  This project is licensed under the Creative Commons
+ *  Attribution-NonCommercial-NoDerivatives 4.0 International License
+ *  (CC BY-NC-ND 4.0) with additional permissions.
  *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in the
- *      documentation and/or other materials provided with the distribution.
+ *  Independent mods using this project only through its public interfaces
+ *  are not required to use CC BY-NC-ND 4.0.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- *  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
- *  PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
- *  OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- *  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- *  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- *  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  See the repository root LICENSE file for the full license text and
+ *  additional permissions.
  */
 
 #pragma once
@@ -79,14 +66,23 @@ extern "C" {
 namespace ModSDK {
 	namespace Memory {
 		/**
+		 * @brief Returns a handle to the module that contains the original game code.
+		 *
+		 * @return HMODULE - Handle to `WW2Mod.original.dll` with fallback to `WW2Mod.dll`.
+		 */
+		HMODULE GetGameModuleHandle();
+
+		/**
 		 * @brief Scans a module for a byte pattern signature.
 		 *
-		 * @param moduleName Name of the module (e.g., "WW2Mod.dll").
+		 * Use `GetGameModuleHandle()` when you want to scan the original game module.
+		 *
+		 * @param moduleHandle Handle to the module to scan.
 		 * @param signature Pattern string (e.g., "48 8B ?? ?? ?? ?? ?? 48 8B").
 		 * @param reportError Whether to show an error if the pattern is not found.
-		 * @return std::uintptr_t Address where the pattern was found, or 0 if not found.
+		 * @return std::uintptr_t Address where the pattern was found or 0 if not found.
 		 */
-		std::uintptr_t FindPattern(const char* moduleName, const char* signature, bool reportError = true);
+		std::uintptr_t FindPattern(HMODULE moduleHandle, const char* signature, bool reportError = true);
 
 		/**
 		 * @brief Patches memory by copying bytes to a destination address.
