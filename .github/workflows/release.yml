@@ -36,7 +36,7 @@ jobs:
         mkdir -p CoHModSDK_Loader
         cp -a artifact/CoHModSDK.lib CoHModSDK_Core/
         cp -a ModSDK_Core/include/CoHModSDK.hpp CoHModSDK_Core/include/
-        cp -a artifact/CoHModSDKLoader.dll CoHModSDK_Loader/WW2Mod.dll
+        cp -a artifact/CoHModSDKLoader.dll CoHModSDK_Loader/
         cd CoHModSDK_Core
         zip -r ../CoHModSDK_Core-${{ github.event.inputs.build-ver }}.zip .
         cd ../CoHModSDK_Loader

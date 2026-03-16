@@ -10,8 +10,8 @@ The repository contains two Visual Studio projects:
   - static library for SDK mods
   - public header: `ModSDK_Core/include/CoHModSDK.hpp`
 - `ModSDK_Loader`
-  - `WW2Mod.dll` wrapper / proxy
-  - loads `WW2Mod.original.dll`
+  - `CoHModSDKLoader.dll`
+  - used by mods that set `DllName = CoHModSDKLoader`
   - loads mod DLLs listed in `CoHModSDKLoader.ini`
 
 ## Requirements
@@ -98,12 +98,7 @@ Current public API groups:
 - `ModSDK::Hooks`
   - `CreateHook(...)`
   - `EnableHook(...)`
-  - `EnableAllHooks()`
   - `DisableHook(...)`
-  - `DisableAllHooks()`
-
-`GetGameModuleHandle()` prefers `WW2Mod.original.dll` and falls back to
-`WW2Mod.dll`.
 
 ## Releases
 
@@ -113,14 +108,12 @@ The release workflow produces two archives:
   - `CoHModSDK.lib`
   - `include/CoHModSDK.hpp`
 - `CoHModSDK_Loader-<version>.zip`
-  - `WW2Mod.dll`
+  - `CoHModSDKLoader.dll`
 
 ## Technical Notes
 
 - The hook engine is `x86` only.
 - Hook creation is intentionally conservative and can fail on unsupported
   function prologues.
-- The loader currently expects the wrapper/original split:
-  - `WW2Mod.dll`
-  - `WW2Mod.original.dll`
+- SDK-enabled mods are expected to use `DllName = CoHModSDKLoader`.
 - The loader reads mod names from `CoHModSDKLoader.ini`.

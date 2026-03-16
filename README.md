@@ -8,7 +8,7 @@ It is intended to make SDK-based mods easier to build and easier to install by
 providing:
 
 - a small modding SDK for native DLL mods
-- a `WW2Mod.dll` wrapper loader
+- a `CoHModSDKLoader.dll` mod loader
 - a simple `mods/` loading workflow
 
 ## 📦 What Is Included
@@ -20,18 +20,17 @@ Releases are split into two parts:
   - contains `CoHModSDK.lib` and `CoHModSDK.hpp`
 - `CoHModSDK_Loader`
   - for game installation
-  - contains the wrapper `WW2Mod.dll`
+  - contains `CoHModSDKLoader.dll`
 
 ## 🔧 Installing the Loader
 
-The loader is designed to sit in the game directory as `WW2Mod.dll` and load
-the original game DLL from `WW2Mod.original.dll`.
+The loader is intended for mods that use `DllName = CoHModSDKLoader` in their
+`.module` file.
 
 Expected layout:
 
 ```text
-WW2Mod.dll
-WW2Mod.original.dll
+CoHModSDKLoader.dll
 CoHModSDKLoader.ini
 mods\
   YourMod.dll
@@ -39,10 +38,10 @@ mods\
 
 Basic setup:
 
-1. Rename the original game `WW2Mod.dll` to `WW2Mod.original.dll`
-2. Place the CoHModSDK loader `WW2Mod.dll` into the game directory
-3. Create `CoHModSDKLoader.ini` in the same directory
-4. Put SDK mod DLLs into the `mods` directory
+1. Place `CoHModSDKLoader.dll` into the game directory
+2. Create `CoHModSDKLoader.ini` in the same directory
+3. Put SDK mod DLLs into the `mods` directory
+4. Make sure the target mod uses `DllName = CoHModSDKLoader`
 
 Example `CoHModSDKLoader.ini`:
 
@@ -68,6 +67,7 @@ That includes:
 - repository layout
 - SDK exports and public API
 - writing SDK mods
+- loader setup for SDK-enabled mods
 - current technical limitations
 
 ## 📄 License
