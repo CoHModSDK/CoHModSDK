@@ -66,28 +66,17 @@ extern "C" {
 namespace ModSDK {
 	namespace Memory {
 		/**
-		 * @brief Returns a handle to the module that contains the original game code.
-		 *
-		 * @return HMODULE - Handle to `WW2Mod.original.dll` with fallback to `WW2Mod.dll`.
-		 */
-		HMODULE GetGameModuleHandle();
-
-		/**
 		 * @brief Scans a module for a byte pattern signature.
 		 *
-		 * Use `GetGameModuleHandle()` when you want to scan the original game module.
-		 *
-		 * @param moduleHandle Handle to the module to scan.
+		 * @param moduleName Name of the module (e.g., "WW2Mod.dll").
 		 * @param signature Pattern string (e.g., "48 8B ?? ?? ?? ?? ?? 48 8B").
 		 * @param reportError Whether to show an error if the pattern is not found.
 		 * @return std::uintptr_t Address where the pattern was found or 0 if not found.
 		 */
-		std::uintptr_t FindPattern(HMODULE moduleHandle, const char* signature, bool reportError = true);
+		std::uintptr_t FindPattern(const char* moduleName, const char* signature, bool reportError = true);
 
 		/**
 		 * @brief Patches memory by copying bytes to a destination address.
-		 *
-		 * Automatically changes memory protection to allow writing.
 		 *
 		 * @param destination Target address to patch.
 		 * @param source Bytes to write.
@@ -116,25 +105,11 @@ namespace ModSDK {
 		bool EnableHook(void* targetFunction);
 
 		/**
-		 * @brief Enables all hooks created by the SDK.
-		 *
-		 * @return true if successful, false otherwise.
-		 */
-		bool EnableAllHooks();
-
-		/**
 		 * @brief Disables an individual hook.
 		 *
 		 * @param targetFunction Pointer to the hooked function.
 		 * @return true if successfully disabled, false otherwise.
 		 */
 		bool DisableHook(void* targetFunction);
-
-		/**
-		 * @brief Disables all active hooks created by the SDK.
-		 *
-		 * @return true if successful, false otherwise.
-		 */
-		bool DisableAllHooks();
 	}
 }

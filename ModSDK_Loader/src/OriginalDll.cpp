@@ -16,7 +16,7 @@ namespace {
         const auto getDllVersion = reinterpret_cast<Loader::GetDllVersionFunc>(GetProcAddress(g_originalWw2ModDll, "GetDllVersion"));
 
         if ((mutexCtor == nullptr) || (initLocksAssign == nullptr) || (getDllInterface == nullptr) || (getDllVersion == nullptr)) {
-            Loader::FailFast("WW2Mod.original.dll is missing one or more required exports");
+            Loader::FailFast("WW2Mod.dll is missing one or more required exports");
         }
 
         Loader::SetStdMutexCtorExportTarget(mutexCtor);
@@ -28,10 +28,10 @@ namespace {
 
 namespace Loader {
     void LoadOriginalDll() {
-        const std::filesystem::path originalDllPath = GetRelativePath("WW2Mod.original.dll");
+        const std::filesystem::path originalDllPath = GetRelativePath("WW2Mod.dll");
         g_originalWw2ModDll = LoadLibraryA(originalDllPath.string().c_str());
         if (!g_originalWw2ModDll) {
-            FailFast("Failed to load WW2Mod.original.dll");
+            FailFast("Failed to load WW2Mod.dll");
         }
 
         ResolveOriginalExports();
