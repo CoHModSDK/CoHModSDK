@@ -12,6 +12,7 @@ public:
 
     void Open(const std::filesystem::path& logPath);
 
+	void LogDebug(const std::string& message);
     void LogInfo(const std::string& message);
     void LogWarning(const std::string& message);
     void LogError(const std::string& message);

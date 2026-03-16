@@ -33,7 +33,7 @@ void Logger::Open(const std::filesystem::path& logPath) {
 
     logFile.open(logPath, std::ios::out | std::ios::trunc);
     if (logFile.is_open()) {
-        LogInfo("Log file created: " + logPath.string());
+        LogDebug("Log file created");
     }
 }
 
@@ -58,6 +58,10 @@ void Logger::LogMessage(const char* level, const std::string& message) {
 
     logFile << GetCurrentTimestamp() << "[" << level << "] " << message << std::endl;
     logFile.flush();
+}
+
+void Logger::LogDebug(const std::string& message) {
+    LogMessage("DEBUG", message);
 }
 
 void Logger::LogInfo(const std::string& message) {
