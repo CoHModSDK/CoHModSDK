@@ -2,12 +2,13 @@
 
 ## 📜 Description
 
-CoHModSDK is a lightweight SDK and loader for `Company of Heroes Relaunch`.
+CoHModSDK is a runtime SDK and loader for `Company of Heroes Relaunch`.
 
 It is intended to make SDK-based mods easier to build and easier to install by
 providing:
 
 - a small modding SDK for native DLL mods
+- a required shared runtime: `CoHModSDKRuntime.dll`
 - a `CoHModSDKLoader.dll` mod loader
 - a simple `mods/` loading workflow
 
@@ -20,7 +21,7 @@ Releases are split into two parts:
   - contains `CoHModSDK.lib` and `CoHModSDK.hpp`
 - `CoHModSDK_Loader`
   - for game installation
-  - contains `CoHModSDKLoader.dll`
+  - contains `CoHModSDKLoader.dll` and `CoHModSDKRuntime.dll`
 
 ## 🔧 Installing the Loader
 
@@ -31,6 +32,7 @@ Expected layout:
 
 ```text
 CoHModSDKLoader.dll
+CoHModSDKRuntime.dll
 CoHModSDKLoader.ini
 mods\
   YourMod.dll
@@ -38,7 +40,7 @@ mods\
 
 Basic setup:
 
-1. Place `CoHModSDKLoader.dll` into the game directory
+1. Place `CoHModSDKLoader.dll` and `CoHModSDKRuntime.dll` into the game directory
 2. Create `CoHModSDKLoader.ini` in the same directory
 3. Put SDK mod DLLs into the `mods` directory
 4. Make sure the target mod uses `DllName = CoHModSDKLoader`

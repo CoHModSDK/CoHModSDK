@@ -29,6 +29,9 @@
     <ClCompile Include="src\OriginalDll.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\RuntimeBridge.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\exports\ProxyExports.cpp">
       <Filter>src\exports</Filter>
     </ClCompile>
@@ -47,6 +50,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\OriginalDll.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RuntimeBridge.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\exports\ProxyExports.hpp">

@@ -1,12 +1,17 @@
 #include "ModLoader.hpp"
 
 #include <Windows.h>
-#include <vector>
-#include <string>
+
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "../../ModSDK_Core/include/CoHModSDK.hpp"
 #include "LoaderRuntime.hpp"
+#include "RuntimeBridge.hpp"
 #include "utils/Logger.hpp"
 
 namespace {
@@ -14,13 +19,17 @@ namespace {
     constexpr char kModsDirectoryName[] = "mods";
     constexpr char kLoaderLogPath[] = "mods/logs/sdk-loader.log";
 
-    using OnSDKLoadFunc = void(*)();
-    using OnGameStartFunc = void(*)();
-    using OnGameShutdownFunc = void(*)();
-    using GetModStringFunc = const char*(*)();
+    using GetModModuleFunc = bool(*)(std::uint32_t abiVersion, const CoHModSDKModuleV1** outModule);
+    using SetModContextFunc = void(*)(const CoHModSDKModContextV1* modContext);
+
+    struct LoadedMod {
+        std::string fileName;
+        HMODULE handle = nullptr;
+        const CoHModSDKModuleV1* module = nullptr;
+    };
 
     Logger logger;
-    std::vector<std::pair<std::string, HMODULE>> g_loadedMods;
+    std::vector<LoadedMod> g_loadedMods;
 
     Logger& GetLogger() {
         if (!logger.IsOpen()) {
@@ -40,34 +49,28 @@ namespace {
         return value.substr(first, last - first + 1);
     }
 
-    std::string GetExportedModString(HMODULE modHandle, const char* exportName) {
-        const auto exportFunction = reinterpret_cast<GetModStringFunc>(GetProcAddress(modHandle, exportName));
-        if (exportFunction == nullptr) {
-            return {};
-        }
-
-        const char* value = exportFunction();
-        if (value == nullptr) {
-            return {};
-        }
-
-        return value;
-    }
-
-    void LogModMetadata(HMODULE modHandle, const std::string& name) {
-        const std::string modName = GetExportedModString(modHandle, "GetModName");
-        const std::string modVersion = GetExportedModString(modHandle, "GetModVersion");
-        const std::string modAuthor = GetExportedModString(modHandle, "GetModAuthor");
-
-        if (modName.empty() && modVersion.empty() && modAuthor.empty()) {
+    void LogModMetadata(const LoadedMod& loadedMod) {
+        if (loadedMod.module == nullptr) {
             return;
         }
 
-        std::string message = "Mod metadata for " + name + ": ";
-        message += "name=" + (modName.empty() ? std::string("<unknown>") : modName);
-        message += ", version=" + (modVersion.empty() ? std::string("<unknown>") : modVersion);
-        message += ", author=" + (modAuthor.empty() ? std::string("<unknown>") : modAuthor);
+        std::string message = "Loaded mod metadata for " + loadedMod.fileName + ": ";
+        message += "modid=" + std::string(loadedMod.module->modId == nullptr ? "<unknown>" : loadedMod.module->modId);
+        message += ", name=" + std::string(loadedMod.module->name == nullptr ? "<unknown>" : loadedMod.module->name);
+        message += ", version=" + std::string(loadedMod.module->version == nullptr ? "<unknown>" : loadedMod.module->version);
+        message += ", author=" + std::string(loadedMod.module->author == nullptr ? "<unknown>" : loadedMod.module->author);
         GetLogger().LogInfo(message);
+    }
+
+    void UnloadMod(const LoadedMod& loadedMod, bool callShutdown) {
+        if (callShutdown && (loadedMod.module != nullptr) && (loadedMod.module->OnShutdown != nullptr)) {
+            loadedMod.module->OnShutdown();
+        }
+
+        if (loadedMod.handle != nullptr) {
+            Loader::UnregisterModWithRuntime(loadedMod.handle);
+            FreeLibrary(loadedMod.handle);
+        }
     }
 }
 
@@ -87,43 +90,95 @@ namespace Loader {
         std::string line;
         while (std::getline(config, line)) {
             line = Trim(std::move(line));
-            if ((line.empty()) || (line[0] == '#')) {
+            if (line.empty() || (line[0] == '#')) {
                 continue;
             }
 
             const std::string path = (modsDirectory / line).string();
             HMODULE modHandle = LoadLibraryA(path.c_str());
-            if (!modHandle) {
+            if (modHandle == nullptr) {
                 GetLogger().LogError("Failed to load mod: " + line);
                 continue;
             }
 
-            g_loadedMods.push_back(std::make_pair(line, modHandle));
+            const auto getModule = reinterpret_cast<GetModModuleFunc>(GetProcAddress(modHandle, "CoHMod_GetModule"));
+            if (getModule == nullptr) {
+                GetLogger().LogError("Mod is missing CoHMod_GetModule export: " + line);
+                FreeLibrary(modHandle);
+                continue;
+            }
+
+            const auto setContext = reinterpret_cast<SetModContextFunc>(GetProcAddress(modHandle, "CoHMod_SetContext"));
+            if (setContext == nullptr) {
+                GetLogger().LogError("Mod is missing CoHMod_SetContext export: " + line);
+                FreeLibrary(modHandle);
+                continue;
+            }
+
+            const CoHModSDKModuleV1* module = nullptr;
+            if (!getModule(COHMODSDK_ABI_VERSION, &module) || (module == nullptr) || (module->abiVersion != COHMODSDK_ABI_VERSION) || (module->size < sizeof(CoHModSDKModuleV1))) {
+                GetLogger().LogError("Mod returned an invalid module descriptor: " + line);
+                FreeLibrary(modHandle);
+                continue;
+            }
+
+            LoadedMod loadedMod = {};
+            loadedMod.fileName = line;
+            loadedMod.handle = modHandle;
+            loadedMod.module = module;
+
+            if ((loadedMod.module->modId == nullptr) || (loadedMod.module->name == nullptr) || (loadedMod.module->version == nullptr) || (loadedMod.module->author == nullptr)) {
+                GetLogger().LogError("Mod metadata is incomplete: " + line);
+                FreeLibrary(modHandle);
+                continue;
+            }
+
+            const CoHModSDKModContextV1* modContext = nullptr;
+            if (!RegisterModWithRuntime(loadedMod.handle, loadedMod.module, &modContext) || (modContext == nullptr)) {
+                GetLogger().LogError("Failed to register mod with runtime: " + line);
+                FreeLibrary(modHandle);
+                continue;
+            }
+
+            setContext(modContext);
+            if ((loadedMod.module->OnInitialize != nullptr) && !loadedMod.module->OnInitialize()) {
+                GetLogger().LogError("Mod OnInitialize failed: " + line);
+                UnloadMod(loadedMod, true);
+                continue;
+            }
+
+            g_loadedMods.push_back(loadedMod);
             GetLogger().LogInfo("Loaded mod: " + line);
-            LogModMetadata(modHandle, line);
-
-            if (auto onLoad = reinterpret_cast<OnSDKLoadFunc>(GetProcAddress(modHandle, "OnSDKLoad"))) {
-                onLoad();
-				GetLogger().LogDebug("Called OnSDKLoad for " + line);
-            }
+            LogModMetadata(loadedMod);
         }
     }
 
-    void NotifyModsGameStart() {
-        for (auto& modEntry : g_loadedMods) {
-            if (auto onStart = reinterpret_cast<OnGameStartFunc>(GetProcAddress(modEntry.second, "OnGameStart"))) {
-                onStart();
-                GetLogger().LogDebug("Called OnGameStart for " + modEntry.first);
+    void NotifyModsLoaded() {
+        for (std::size_t index = 0; index < g_loadedMods.size();) {
+            const LoadedMod loadedMod = g_loadedMods[index];
+            if ((loadedMod.module->OnModsLoaded != nullptr) && !loadedMod.module->OnModsLoaded()) {
+                GetLogger().LogError("Mod OnModsLoaded failed: " + loadedMod.fileName);
+                UnloadMod(loadedMod, true);
+                g_loadedMods.erase(g_loadedMods.begin() + static_cast<std::ptrdiff_t>(index));
+                continue;
             }
+
+            if (loadedMod.module->OnModsLoaded != nullptr) {
+                GetLogger().LogDebug("Called OnModsLoaded for " + loadedMod.fileName);
+            }
+
+            ++index;
         }
     }
 
-    void NotifyModsGameShutdown() {
-        for (auto& modEntry : g_loadedMods) {
-            if (auto onShutdown = reinterpret_cast<OnGameShutdownFunc>(GetProcAddress(modEntry.second, "OnGameShutdown"))) {
-                onShutdown();
-                GetLogger().LogDebug("Called OnGameShutdown for " + modEntry.first);
+    void NotifyModsShutdown() {
+        for (const LoadedMod& loadedMod : g_loadedMods) {
+            if (loadedMod.module->OnShutdown != nullptr) {
+                loadedMod.module->OnShutdown();
+                GetLogger().LogDebug("Called OnShutdown for " + loadedMod.fileName);
             }
+
+            UnregisterModWithRuntime(loadedMod.handle);
         }
     }
 }

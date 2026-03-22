@@ -2,6 +2,6 @@
 
 namespace Loader {
     void LoadConfiguredMods();
-    void NotifyModsGameStart();
-    void NotifyModsGameShutdown();
+    void NotifyModsLoaded();
+    void NotifyModsShutdown();
 }

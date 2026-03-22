@@ -1,5 +1,7 @@
 #include "exports/ProxyExports.hpp"
 
+#include "../LoaderRuntime.hpp"
+
 namespace {
     FARPROC g_stdMutexCtorExport = nullptr;
     FARPROC g_stdInitLocksAssignExport = nullptr;
@@ -38,9 +40,11 @@ extern "C" __declspec(naked) void ForwardStdInitLocksAssign() {
 }
 
 extern "C" int ExportedGetDllInterface() {
+    Loader::EnsureInitialized();
     return g_getDllInterfaceExport();
 }
 
 extern "C" int ExportedGetDllVersion() {
+    Loader::EnsureInitialized();
     return g_getDllVersionExport();
 }

@@ -6,7 +6,7 @@
 
 namespace Loader {
     void SetModuleHandle(HMODULE loaderModule);
-    void Initialize();
+    void EnsureInitialized();
     void Shutdown();
 
     [[noreturn]] void FailFast(const std::string& message);

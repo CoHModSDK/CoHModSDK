@@ -42,13 +42,19 @@ bool Logger::IsOpen() const {
 }
 
 std::string Logger::GetCurrentTimestamp() const {
-    SYSTEMTIME st;
+    SYSTEMTIME st = {};
     GetLocalTime(&st);
 
-    char buffer[64];
-    sprintf_s(buffer, "[%04d-%02d-%02d %02d:%02d:%02d]",
-        st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
-    return std::string(buffer);
+    char buffer[32] = {};
+    sprintf_s(
+        buffer,
+        "[%02d:%02d:%02d]",
+        st.wHour,
+        st.wMinute,
+        st.wSecond
+    );
+
+    return buffer;
 }
 
 void Logger::LogMessage(const char* level, const std::string& message) {

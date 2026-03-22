@@ -1,10 +1,23 @@
 #include "LoaderRuntime.hpp"
 
+#include <Windows.h>
+
+#include <filesystem>
+
 #include "ModLoader.hpp"
 #include "OriginalDll.hpp"
+#include "RuntimeBridge.hpp"
 
 namespace {
     HMODULE g_loaderModule = nullptr;
+    INIT_ONCE g_initializeOnce = INIT_ONCE_STATIC_INIT;
+
+    BOOL CALLBACK InitializeOnceProc(PINIT_ONCE, PVOID, PVOID*) {
+        Loader::LoadRuntime();
+        Loader::LoadConfiguredMods();
+        Loader::NotifyModsLoaded();
+        return TRUE;
+    }
 }
 
 namespace Loader {
@@ -12,18 +25,20 @@ namespace Loader {
         g_loaderModule = loaderModule;
     }
 
-    void Initialize() {
-        LoadOriginalDll();
-        LoadConfiguredMods();
-        NotifyModsGameStart();
+    void EnsureInitialized() {
+        PVOID context = nullptr;
+        if (!InitOnceExecuteOnce(&g_initializeOnce, &InitializeOnceProc, nullptr, &context)) {
+            FailFast("Failed to initialize CoHModSDK loader");
+        }
     }
 
     void Shutdown() {
-        NotifyModsGameShutdown();
+        NotifyModsShutdown();
+        ShutdownRuntime();
     }
 
     [[noreturn]] void FailFast(const std::string& message) {
-        MessageBoxA(nullptr, message.c_str(), "Error", MB_ICONERROR);
+        MessageBoxA(nullptr, message.c_str(), "CoHModSDK Loader Error", MB_ICONERROR);
         ExitProcess(EXIT_FAILURE);
     }
 

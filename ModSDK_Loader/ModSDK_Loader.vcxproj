@@ -99,6 +99,7 @@
     <ClCompile Include="src\LoaderRuntime.cpp" />
     <ClCompile Include="src\ModLoader.cpp" />
     <ClCompile Include="src\OriginalDll.cpp" />
+    <ClCompile Include="src\RuntimeBridge.cpp" />
     <ClCompile Include="src\exports\ProxyExports.cpp" />
     <ClCompile Include="src\utils\Logger.cpp" />
   </ItemGroup>
@@ -107,6 +108,7 @@
     <ClInclude Include="src\LoaderRuntime.hpp" />
     <ClInclude Include="src\ModLoader.hpp" />
     <ClInclude Include="src\OriginalDll.hpp" />
+    <ClInclude Include="src\RuntimeBridge.hpp" />
     <ClInclude Include="src\exports\ProxyExports.hpp" />
     <ClInclude Include="src\utils\Logger.hpp" />
   </ItemGroup>
