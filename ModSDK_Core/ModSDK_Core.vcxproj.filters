@@ -11,21 +11,48 @@
     <Filter Include="src\hooks">
       <UniqueIdentifier>{05626f60-edbc-42e0-a0a4-b713129339f9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\config">
+      <UniqueIdentifier>{d48ad08a-55fd-438f-b14f-3536b07068fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\runtime">
+      <UniqueIdentifier>{77ae88ae-c48e-4dd2-85cf-3eb6d91190a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utils">
+      <UniqueIdentifier>{07a1db1c-8afd-448d-bcae-cf9c7865a7ea}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\CoHModSDK.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\config\ConfigRegistry.cpp">
+      <Filter>src\config</Filter>
+    </ClCompile>
     <ClCompile Include="src\hooks\HookEngine.cpp">
       <Filter>src\hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="src\runtime\RuntimeState.cpp">
+      <Filter>src\runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils\Logger.cpp">
+      <Filter>src\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\CoHModSDK.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="src\config\ConfigRegistry.hpp">
+      <Filter>src\config</Filter>
+    </ClInclude>
     <ClInclude Include="src\hooks\HookEngine.hpp">
       <Filter>src\hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\runtime\RuntimeState.hpp">
+      <Filter>src\runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\Logger.hpp">
+      <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

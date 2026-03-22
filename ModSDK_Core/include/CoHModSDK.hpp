@@ -1,5 +1,5 @@
 /**
- *  CoHModSDK - The lightweight modding SDK for Company of Heroes
+ *  CoHModSDK - Shared runtime SDK for Company of Heroes
  *  Copyright (c) 2026 Tosox
  *
  *  This project is licensed under the Creative Commons
@@ -16,100 +16,281 @@
 #pragma once
 
 #include <Windows.h>
+
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
+
+#define COHMODSDK_ABI_VERSION 1u
+
+#if defined(COHMODSDK_RUNTIME_EXPORTS)
+#define COHMODSDK_RUNTIME_API extern "C" __declspec(dllexport)
+#else
+#define COHMODSDK_RUNTIME_API extern "C" __declspec(dllimport)
+#endif
+
+#define COHMODSDK_MODULE_API extern "C" __declspec(dllexport)
 
 extern "C" {
-	/**
-	 * @brief Called once when the SDK loads the mod DLL.
-	 *
-	 * Perform any early setup required for the mod here (e.g., install hooks, patch memory).
-	 */
-	__declspec(dllexport) void OnSDKLoad();
+    struct CoHModSDKModContextV1;
 
-	/**
-	 * @brief Called when the game is starting (after all mods have been loaded).
-	 *
-	 * Use this to initialize features that require the game to be fully running.
-	 */
-	__declspec(dllexport) void OnGameStart();
+    enum CoHModSDKLogLevel : std::uint32_t {
+        CoHModSDKLogLevel_Debug = 0,
+        CoHModSDKLogLevel_Info = 1,
+        CoHModSDKLogLevel_Warning = 2,
+        CoHModSDKLogLevel_Error = 3,
+    };
 
-	/**
-	 * @brief Called when the game is shutting down.
-	 *
-	 * Use this to clean up any hooks, memory patches, or resources before unloading.
-	 */
-	__declspec(dllexport) void OnGameShutdown();
+    enum CoHModSDKConfigType : std::uint32_t {
+        CoHModSDKConfigType_Bool = 0,
+        CoHModSDKConfigType_Int = 1,
+        CoHModSDKConfigType_Float = 2,
+        CoHModSDKConfigType_Enum = 3,
+    };
 
-	/**
-	 * @brief Returns the display name of the mod.
-	 *
-	 * @return const char* - Name of the mod.
-	 */
-	__declspec(dllexport) const char* GetModName();
+    enum CoHModSDKConfigFlags : std::uint32_t {
+        CoHModSDKConfigFlags_None = 0,
+        CoHModSDKConfigFlags_RestartRequired = 1u << 0,
+    };
 
-	/**
-	 * @brief Returns the version string of the mod.
-	 *
-	 * @return const char* - Version of the mod.
-	 */
-	__declspec(dllexport) const char* GetModVersion();
+    struct CoHModSDKRuntimeInitV1 {
+        std::uint32_t abiVersion;
+        std::uint32_t size;
+        const char* loaderDirectory;
+        const char* modsDirectory;
+        const char* configDirectory;
+        const char* logPath;
+        const char* gameModuleName;
+    };
 
-	/**
-	 * @brief Returns the author name(s) of the mod.
-	 *
-	 * @return const char* - Author or team name.
-	 */
-	__declspec(dllexport) const char* GetModAuthor();
+    struct CoHModSDKRuntimeInfoV1 {
+        std::uint32_t abiVersion;
+        std::uint32_t size;
+        const char* runtimeVersion;
+        const char* loaderDirectory;
+        const char* modsDirectory;
+        const char* configDirectory;
+        const char* logPath;
+        const char* gameModuleName;
+    };
+
+    struct CoHModSDKConfigValueV1 {
+        CoHModSDKConfigType type;
+        union {
+            std::uint32_t boolValue;
+            std::int32_t intValue;
+            float floatValue;
+            std::int32_t enumValue;
+        };
+    };
+
+    using CoHModSDKConfigChangedCallback = void(*)(const char* modId, const char* optionId, const CoHModSDKConfigValueV1* value, void* userData);
+
+    struct CoHModSDKConfigChoiceV1 {
+        std::int32_t value;
+        const char* valueId;
+        const char* label;
+    };
+
+    struct CoHModSDKConfigOptionV1 {
+        const char* optionId;
+        const char* category;
+        const char* label;
+        const char* description;
+        CoHModSDKConfigType type;
+        CoHModSDKConfigValueV1 defaultValue;
+        float minValue;
+        float maxValue;
+        float step;
+        std::uint32_t flags;
+        const CoHModSDKConfigChoiceV1* choices;
+        std::uint32_t choiceCount;
+        CoHModSDKConfigChangedCallback onChanged;
+        void* userData;
+    };
+
+    struct CoHModSDKConfigSchemaV1 {
+        const char* modId;
+        const CoHModSDKConfigOptionV1* options;
+        std::uint32_t optionCount;
+    };
+
+    using CoHModSDKConfigOptionVisitor = bool(*)(const CoHModSDKConfigOptionV1* option, const CoHModSDKConfigValueV1* currentValue, void* userData);
+
+    struct CoHModSDKApiV1 {
+        std::uint32_t abiVersion;
+        std::uint32_t size;
+        const CoHModSDKRuntimeInfoV1* (*GetRuntimeInfo)();
+        void (*Log)(const CoHModSDKModContextV1* modContext, CoHModSDKLogLevel level, const char* message);
+        void (*ShowError)(const CoHModSDKModContextV1* modContext, const char* message);
+        std::uintptr_t (*FindPattern)(const char* moduleName, const char* signature, bool reportError);
+        void (*PatchMemory)(void* destination, const void* source, std::size_t size);
+        bool (*CreateHook)(void* targetFunction, void* detourFunction, void** originalFunction);
+        bool (*EnableHook)(void* targetFunction);
+        bool (*DisableHook)(void* targetFunction);
+        bool (*RegisterConfigSchema)(const CoHModSDKConfigSchemaV1* schema);
+        bool (*GetConfigValue)(const char* modId, const char* optionId, CoHModSDKConfigValueV1* outValue);
+        bool (*SetConfigValue)(const char* modId, const char* optionId, const CoHModSDKConfigValueV1* value);
+        bool (*EnumerateConfigOptions)(const char* modId, CoHModSDKConfigOptionVisitor visitor, void* userData);
+    };
+
+    struct CoHModSDKModuleV1 {
+        std::uint32_t abiVersion;
+        std::uint32_t size;
+        const char* modId;
+        const char* name;
+        const char* version;
+        const char* author;
+        bool (*OnInitialize)();
+        bool (*OnModsLoaded)();
+        void (*OnShutdown)();
+    };
+
+    COHMODSDK_RUNTIME_API bool CoHModSDKRuntime_Initialize(const CoHModSDKRuntimeInitV1* init);
+    COHMODSDK_RUNTIME_API void CoHModSDKRuntime_Shutdown();
+    COHMODSDK_RUNTIME_API bool CoHModSDKRuntime_RegisterMod(HMODULE modHandle, const CoHModSDKModuleV1* module, const CoHModSDKModContextV1** outContext);
+    COHMODSDK_RUNTIME_API void CoHModSDKRuntime_UnregisterMod(HMODULE modHandle);
+    COHMODSDK_RUNTIME_API bool CoHModSDK_GetApi(std::uint32_t abiVersion, const CoHModSDKApiV1** outApi);
 }
 
+#define COHMODSDK_EXPORT_MODULE(moduleInstance) \
+    COHMODSDK_MODULE_API bool CoHMod_GetModule(std::uint32_t abiVersion, const CoHModSDKModuleV1** outModule) { \
+        if ((outModule == nullptr) || (abiVersion != COHMODSDK_ABI_VERSION)) { \
+            return false; \
+        } \
+        *outModule = &(moduleInstance); \
+        return true; \
+    } \
+    COHMODSDK_MODULE_API void CoHMod_SetContext(const CoHModSDKModContextV1* modContext) { \
+        ::ModSDK::Detail::SetModContext(modContext); \
+    }
+
 namespace ModSDK {
-	namespace Memory {
-		/**
-		 * @brief Scans a module for a byte pattern signature.
-		 *
-		 * @param moduleName Name of the module (e.g., "WW2Mod.dll").
-		 * @param signature Pattern string (e.g., "48 8B ?? ?? ?? ?? ?? 48 8B").
-		 * @param reportError Whether to show an error if the pattern is not found.
-		 * @return std::uintptr_t Address where the pattern was found or 0 if not found.
-		 */
-		std::uintptr_t FindPattern(const char* moduleName, const char* signature, bool reportError = true);
+    namespace Detail {
+        inline const CoHModSDKModContextV1*& ModContextStorage() {
+            static const CoHModSDKModContextV1* modContext = nullptr;
+            return modContext;
+        }
 
-		/**
-		 * @brief Patches memory by copying bytes to a destination address.
-		 *
-		 * @param destination Target address to patch.
-		 * @param source Bytes to write.
-		 * @param size Number of bytes to copy.
-		 */
-		void PatchMemory(void* destination, const void* source, std::size_t size);
-	}
+        inline void SetModContext(const CoHModSDKModContextV1* modContext) {
+            ModContextStorage() = modContext;
+        }
 
-	namespace Hooks {
-		/**
-		 * @brief Creates a hook from a target function to a detour function.
-		 *
-		 * @param targetFunction Pointer to the function to hook.
-		 * @param detourFunction Pointer to the custom function (your detour).
-		 * @param originalFunction Out parameter; will store the pointer to call original later.
-		 * @return true if the hook was created successfully, false otherwise.
-		 */
-		bool CreateHook(void* targetFunction, void* detourFunction, void** originalFunction);
+        inline const CoHModSDKModContextV1* GetModContext() {
+            const CoHModSDKModContextV1* modContext = ModContextStorage();
+            if (modContext == nullptr) {
+                throw std::runtime_error("CoHModSDK mod context is unavailable");
+            }
 
-		/**
-		 * @brief Enables an individual installed hook.
-		 *
-		 * @param targetFunction Pointer to the function where a hook was created.
-		 * @return true if successfully enabled, false otherwise.
-		 */
-		bool EnableHook(void* targetFunction);
+            return modContext;
+        }
 
-		/**
-		 * @brief Disables an individual hook.
-		 *
-		 * @param targetFunction Pointer to the hooked function.
-		 * @return true if successfully disabled, false otherwise.
-		 */
-		bool DisableHook(void* targetFunction);
-	}
+        inline const CoHModSDKApiV1& GetApi() {
+            static const CoHModSDKApiV1* api = []() -> const CoHModSDKApiV1* {
+                const CoHModSDKApiV1* resolvedApi = nullptr;
+                if (!CoHModSDK_GetApi(COHMODSDK_ABI_VERSION, &resolvedApi) || (resolvedApi == nullptr)) {
+                    throw std::runtime_error("CoHModSDK runtime API is unavailable");
+                }
+
+                return resolvedApi;
+            }();
+
+            return *api;
+        }
+    }
+
+    namespace Runtime {
+        inline const CoHModSDKRuntimeInfoV1* GetInfo() {
+            return Detail::GetApi().GetRuntimeInfo();
+        }
+
+        inline void Log(CoHModSDKLogLevel level, const char* message) {
+            Detail::GetApi().Log(Detail::GetModContext(), level, message);
+        }
+    }
+
+    namespace Dialogs {
+        inline void ShowError(const char* message) {
+            Detail::GetApi().ShowError(Detail::GetModContext(), message);
+        }
+    }
+
+    namespace Memory {
+        inline std::uintptr_t FindPattern(const char* moduleName, const char* signature, bool reportError = true) {
+            return Detail::GetApi().FindPattern(moduleName, signature, reportError);
+        }
+
+        inline void PatchMemory(void* destination, const void* source, std::size_t size) {
+            Detail::GetApi().PatchMemory(destination, source, size);
+        }
+    }
+
+    namespace Hooks {
+        inline bool CreateHook(void* targetFunction, void* detourFunction, void** originalFunction) {
+            return Detail::GetApi().CreateHook(targetFunction, detourFunction, originalFunction);
+        }
+
+        inline bool EnableHook(void* targetFunction) {
+            return Detail::GetApi().EnableHook(targetFunction);
+        }
+
+        inline bool DisableHook(void* targetFunction) {
+            return Detail::GetApi().DisableHook(targetFunction);
+        }
+    }
+
+    namespace Config {
+        using Value = CoHModSDKConfigValueV1;
+        using Choice = CoHModSDKConfigChoiceV1;
+        using Option = CoHModSDKConfigOptionV1;
+        using Schema = CoHModSDKConfigSchemaV1;
+        using Type = CoHModSDKConfigType;
+        using Flags = CoHModSDKConfigFlags;
+        using ChangedCallback = CoHModSDKConfigChangedCallback;
+        using OptionVisitor = CoHModSDKConfigOptionVisitor;
+
+        inline Value MakeBoolValue(bool value) {
+            Value result = {};
+            result.type = CoHModSDKConfigType_Bool;
+            result.boolValue = value ? 1u : 0u;
+            return result;
+        }
+
+        inline Value MakeIntValue(std::int32_t value) {
+            Value result = {};
+            result.type = CoHModSDKConfigType_Int;
+            result.intValue = value;
+            return result;
+        }
+
+        inline Value MakeFloatValue(float value) {
+            Value result = {};
+            result.type = CoHModSDKConfigType_Float;
+            result.floatValue = value;
+            return result;
+        }
+
+        inline Value MakeEnumValue(std::int32_t value) {
+            Value result = {};
+            result.type = CoHModSDKConfigType_Enum;
+            result.enumValue = value;
+            return result;
+        }
+
+        inline bool RegisterSchema(const Schema& schema) {
+            return Detail::GetApi().RegisterConfigSchema(&schema);
+        }
+
+        inline bool GetValue(const char* modId, const char* optionId, Value* outValue) {
+            return Detail::GetApi().GetConfigValue(modId, optionId, outValue);
+        }
+
+        inline bool SetValue(const char* modId, const char* optionId, const Value& value) {
+            return Detail::GetApi().SetConfigValue(modId, optionId, &value);
+        }
+
+        inline bool EnumerateOptions(const char* modId, OptionVisitor visitor, void* userData) {
+            return Detail::GetApi().EnumerateConfigOptions(modId, visitor, userData);
+        }
+    }
 }

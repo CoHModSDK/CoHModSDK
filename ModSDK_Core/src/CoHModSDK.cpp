@@ -1,96 +1,71 @@
-#include <Windows.h>
-#include <format>
-#include <stdexcept>
-#include <cstring>
-#include <vector>
-
 #include "../include/CoHModSDK.hpp"
+
 #include "hooks/HookEngine.hpp"
-
-namespace ModSDK {
-    namespace Memory {
-        std::uintptr_t FindPattern(const char* moduleName, const char* signature, bool reportError) {
-            HMODULE moduleHandle = GetModuleHandleA(moduleName);
-            if (!moduleHandle) {
-                if (reportError) {
-                    std::string errorMessage = std::format("Unable to get a handle for module '{}'", moduleName);
-                    MessageBoxA(nullptr, errorMessage.c_str(), "Error", MB_ICONERROR);
-                    throw std::runtime_error(errorMessage);
-                }
-                return 0;
-            }
-
-            static auto patternToBytes = [](const char* pattern) {
-                std::vector<int> bytes;
-                char* start = const_cast<char*>(pattern);
-                char* end = const_cast<char*>(pattern) + std::strlen(pattern);
-
-                for (char* current = start; current < end; ++current) {
-                    if (*current == '?') {
-                        ++current;
-                        if (*current == '?') {
-                            ++current;
-                        }
-                        bytes.push_back(-1);
-                    } else {
-                        bytes.push_back(std::strtoul(current, &current, 16));
-                    }
-                }
-                return bytes;
-            };
-
-            PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)(moduleHandle);
-            PIMAGE_NT_HEADERS ntHeaders = (PIMAGE_NT_HEADERS)((std::uint8_t*)(moduleHandle)+dosHeader->e_lfanew);
-
-            std::size_t sizeOfImage = ntHeaders->OptionalHeader.SizeOfImage;
-            std::vector<int> patternBytes = patternToBytes(signature);
-            std::uint8_t* scanBytes = (std::uint8_t*)(moduleHandle);
-
-            std::size_t patternBytesSize = patternBytes.size();
-            int* data = patternBytes.data();
-
-            for (std::size_t i = 0; i < sizeOfImage - patternBytesSize; ++i) {
-                bool found = true;
-
-                for (std::size_t j = 0; j < patternBytesSize; ++j) {
-                    if ((scanBytes[i + j] != data[j]) && (data[j] != -1)) {
-                        found = false;
-                        break;
-                    }
-                }
-
-                if (found) {
-                    return (std::uintptr_t)(&scanBytes[i]);
-                }
-            }
-
-            if (reportError) {
-                std::string errorMessage = std::format("Unknown signature in module {}: {}", moduleName, signature);
-                MessageBoxA(nullptr, errorMessage.c_str(), "Error", MB_ICONERROR);
-                throw std::runtime_error(errorMessage);
-            }
-            return 0;
-        }
-
-        void PatchMemory(void* destination, const void* source, std::size_t size) {
-            DWORD oldProtect;
-            VirtualProtect(destination, size, PAGE_EXECUTE_READWRITE, &oldProtect);
-            memcpy(destination, source, size);
-            VirtualProtect(destination, size, oldProtect, &oldProtect);
-        }
+#include "runtime/RuntimeState.hpp"
+namespace {
+    const CoHModSDKRuntimeInfoV1* GetRuntimeInfoImpl() {
+        return Runtime::GetRuntimeInfo();
     }
 
-    namespace Hooks {
-        bool CreateHook(void* targetFunction, void* detourFunction, void** originalFunction) {
-            return HookEngine::CreateHook(targetFunction, detourFunction, originalFunction);
-        }
-
-		bool EnableHook(void* targetFunction) {
-			return HookEngine::EnableHook(targetFunction);
-		}
-
-		bool DisableHook(void* targetFunction) {
-			return HookEngine::DisableHook(targetFunction);
-		}
+    void LogImpl(const CoHModSDKModContextV1* modContext, CoHModSDKLogLevel level, const char* message) {
+        Runtime::LogForMod(modContext, level, message);
     }
+
+    void ShowErrorImpl(const CoHModSDKModContextV1* modContext, const char* message) {
+        Runtime::ShowModError(modContext, message);
+    }
+
+    bool CreateHookImpl(void* targetFunction, void* detourFunction, void** originalFunction) {
+        return HookEngine::CreateHook(targetFunction, detourFunction, originalFunction);
+    }
+
+    bool EnableHookImpl(void* targetFunction) {
+        return HookEngine::EnableHook(targetFunction);
+    }
+
+    bool DisableHookImpl(void* targetFunction) {
+        return HookEngine::DisableHook(targetFunction);
+    }
+
+    const CoHModSDKApiV1 kApi = {
+        COHMODSDK_ABI_VERSION,
+        sizeof(CoHModSDKApiV1),
+        &GetRuntimeInfoImpl,
+        &LogImpl,
+        &ShowErrorImpl,
+        &Runtime::FindPattern,
+        &Runtime::PatchMemory,
+        &CreateHookImpl,
+        &EnableHookImpl,
+        &DisableHookImpl,
+        &Runtime::RegisterConfigSchema,
+        &Runtime::GetConfigValue,
+        &Runtime::SetConfigValue,
+        &Runtime::EnumerateConfigOptions,
+    };
+}
+
+extern "C" bool CoHModSDKRuntime_Initialize(const CoHModSDKRuntimeInitV1* init) {
+    return Runtime::Initialize(init);
+}
+
+extern "C" void CoHModSDKRuntime_Shutdown() {
+    Runtime::Shutdown();
+}
+
+extern "C" bool CoHModSDKRuntime_RegisterMod(HMODULE modHandle, const CoHModSDKModuleV1* module, const CoHModSDKModContextV1** outContext) {
+    return Runtime::RegisterMod(modHandle, module, outContext);
+}
+
+extern "C" void CoHModSDKRuntime_UnregisterMod(HMODULE modHandle) {
+    Runtime::UnregisterMod(modHandle);
+}
+
+extern "C" bool CoHModSDK_GetApi(std::uint32_t abiVersion, const CoHModSDKApiV1** outApi) {
+    if ((outApi == nullptr) || (abiVersion != COHMODSDK_ABI_VERSION)) {
+        return false;
+    }
+
+    *outApi = &kApi;
+    return true;
 }
