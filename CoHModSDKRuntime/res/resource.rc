@@ -81,7 +81,7 @@ BEGIN
             VALUE "FileDescription", "Shared runtime SDK for Company of Heroes"
             VALUE "FileVersion", "0.4.0"
             VALUE "InternalName", "CoHModSDKRuntime"
-            VALUE "LegalCopyright", "Copyright \251 2026"
+            VALUE "LegalCopyright", "Copyright © 2026"
             VALUE "OriginalFilename", "CoHModSDKRuntime.dll"
             VALUE "ProductName", "CoHModSDKRuntime"
             VALUE "ProductVersion", "0.4.0"
