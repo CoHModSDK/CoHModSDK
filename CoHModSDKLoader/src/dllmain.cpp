@@ -5,8 +5,8 @@
 BOOL APIENTRY DllMain(HMODULE hModule, unsigned long attachReason, void* reserved) {
     switch (attachReason) {
     case DLL_PROCESS_ATTACH:
-        Loader::SetModuleHandle(hModule);
         DisableThreadLibraryCalls(hModule);
+        Loader::SetModuleHandle(hModule);
         Loader::LoadOriginalDll();
         break;
     case DLL_PROCESS_DETACH:
