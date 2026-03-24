@@ -19,8 +19,8 @@ namespace {
     constexpr char kModsDirectoryName[] = "mods";
     constexpr char kLoaderLogPath[] = "mods/logs/sdk-loader.log";
 
-    using GetModModuleFunc = bool(*)(std::uint32_t abiVersion, const CoHModSDKModuleV1** outModule);
-    using SetModContextFunc = void(*)(const CoHModSDKModContextV1* modContext);
+    using GetModModuleFn = bool(*)(std::uint32_t abiVersion, const CoHModSDKModuleV1** outModule);
+    using SetModContextFn = void(*)(const CoHModSDKModContextV1* modContext);
 
     struct LoadedMod {
         std::string fileName;
@@ -78,7 +78,7 @@ namespace {
         }
     }
 
-    bool TryGetValidatedModuleDescriptor(const std::string& fileName, GetModModuleFunc getModule, const CoHModSDKModuleV1*& outModule) {
+    bool TryGetValidatedModuleDescriptor(const std::string& fileName, GetModModuleFn getModule, const CoHModSDKModuleV1*& outModule) {
         outModule = nullptr;
 
         if (!getModule(COHMODSDK_ABI_VERSION, &outModule)) {
@@ -144,14 +144,14 @@ namespace Loader {
                 continue;
             }
 
-            const auto getModule = reinterpret_cast<GetModModuleFunc>(GetProcAddress(modHandle, "CoHMod_GetModule"));
+            const auto getModule = reinterpret_cast<GetModModuleFn>(GetProcAddress(modHandle, "CoHMod_GetModule"));
             if (getModule == nullptr) {
                 GetLogger().LogError("Mod is missing CoHMod_GetModule export: " + line);
                 FreeLibrary(modHandle);
                 continue;
             }
 
-            const auto setContext = reinterpret_cast<SetModContextFunc>(GetProcAddress(modHandle, "CoHMod_SetContext"));
+            const auto setContext = reinterpret_cast<SetModContextFn>(GetProcAddress(modHandle, "CoHMod_SetContext"));
             if (setContext == nullptr) {
                 GetLogger().LogError("Mod is missing CoHMod_SetContext export: " + line);
                 FreeLibrary(modHandle);

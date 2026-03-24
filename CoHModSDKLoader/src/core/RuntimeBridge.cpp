@@ -12,15 +12,15 @@ namespace {
     constexpr char kRuntimeLogPath[] = "mods/logs/sdk-runtime.log";
     constexpr char kGameModuleName[] = "WW2Mod.dll";
 
-    using RuntimeInitializeFunc = bool(*)(const CoHModSDKRuntimeInitV1* init);
-    using RuntimeShutdownFunc = void(*)();
-    using RuntimeRegisterModFunc = bool(*)(HMODULE modHandle, const CoHModSDKModuleV1* module, const CoHModSDKModContextV1** outContext);
-    using RuntimeUnregisterModFunc = void(*)(HMODULE modHandle);
+    using RuntimeInitializeFn = bool(*)(const CoHModSDKRuntimeInitV1* init);
+    using RuntimeShutdownFn = void(*)();
+    using RuntimeRegisterModFn = bool(*)(HMODULE modHandle, const CoHModSDKModuleV1* module, const CoHModSDKModContextV1** outContext);
+    using RuntimeUnregisterModFn = void(*)(HMODULE modHandle);
 
     HMODULE g_runtimeModule = nullptr;
-    RuntimeShutdownFunc g_runtimeShutdown = nullptr;
-    RuntimeRegisterModFunc g_runtimeRegisterMod = nullptr;
-    RuntimeUnregisterModFunc g_runtimeUnregisterMod = nullptr;
+    RuntimeShutdownFn g_runtimeShutdown = nullptr;
+    RuntimeRegisterModFn g_runtimeRegisterMod = nullptr;
+    RuntimeUnregisterModFn g_runtimeUnregisterMod = nullptr;
 }
 
 namespace Loader {
@@ -35,10 +35,10 @@ namespace Loader {
             FailFast("Failed to load CoHModSDKRuntime.dll");
         }
 
-        const auto runtimeInitialize = reinterpret_cast<RuntimeInitializeFunc>(GetProcAddress(g_runtimeModule, "CoHModSDKRuntime_Initialize"));
-        g_runtimeShutdown = reinterpret_cast<RuntimeShutdownFunc>(GetProcAddress(g_runtimeModule, "CoHModSDKRuntime_Shutdown"));
-        g_runtimeRegisterMod = reinterpret_cast<RuntimeRegisterModFunc>(GetProcAddress(g_runtimeModule, "CoHModSDKRuntime_RegisterMod"));
-        g_runtimeUnregisterMod = reinterpret_cast<RuntimeUnregisterModFunc>(GetProcAddress(g_runtimeModule, "CoHModSDKRuntime_UnregisterMod"));
+        const auto runtimeInitialize = reinterpret_cast<RuntimeInitializeFn>(GetProcAddress(g_runtimeModule, "CoHModSDKRuntime_Initialize"));
+        g_runtimeShutdown = reinterpret_cast<RuntimeShutdownFn>(GetProcAddress(g_runtimeModule, "CoHModSDKRuntime_Shutdown"));
+        g_runtimeRegisterMod = reinterpret_cast<RuntimeRegisterModFn>(GetProcAddress(g_runtimeModule, "CoHModSDKRuntime_RegisterMod"));
+        g_runtimeUnregisterMod = reinterpret_cast<RuntimeUnregisterModFn>(GetProcAddress(g_runtimeModule, "CoHModSDKRuntime_UnregisterMod"));
         if ((runtimeInitialize == nullptr) || (g_runtimeShutdown == nullptr) || (g_runtimeRegisterMod == nullptr) || (g_runtimeUnregisterMod == nullptr)) {
             FailFast("CoHModSDKRuntime.dll is missing required exports");
         }
