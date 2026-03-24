@@ -28,7 +28,7 @@ namespace {
         const CoHModSDKModuleV1* module = nullptr;
     };
 
-    Logger logger;
+    Logger logger("Loader");
     std::vector<LoadedMod> loadedMods;
 
     Logger& GetLogger() {

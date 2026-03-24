@@ -6,6 +6,8 @@
 #include <filesystem>
 #include <system_error>
 
+Logger::Logger(const char* name) : name(name) {}
+
 void Logger::Open(const std::filesystem::path& logPath) {
     if (logFile.is_open()) {
         return;
@@ -79,9 +81,11 @@ void Logger::LogMessage(const char* level, const std::string& message, const cha
         return;
     }
 
+    const char* effectiveSource = (source != nullptr) ? source : name;
+
     logFile << GetCurrentTimestamp();
-    if ((source != nullptr) && (*source != '\0')) {
-        logFile << "[" << source << "]";
+    if ((effectiveSource != nullptr) && (*effectiveSource != '\0')) {
+        logFile << "[" << effectiveSource << "]";
     }
 
     logFile << "[" << level << "] " << message << std::endl;
