@@ -394,7 +394,6 @@ namespace Runtime::Config {
 
         std::error_code error;
         std::filesystem::create_directories(this->configDirectory, error);
-        (void)error;
 
         std::scoped_lock lock(mutex);
         modConfigs.clear();

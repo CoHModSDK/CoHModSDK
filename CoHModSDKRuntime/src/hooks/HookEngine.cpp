@@ -464,8 +464,6 @@ namespace {
 
 bool HookEngine::CreateHook(void* targetFunction, void* detourFunction, void** originalFunction) {
 #ifndef _M_IX86
-    (void)targetFunction;
-    (void)detourFunction;
     if (originalFunction != nullptr) {
         *originalFunction = nullptr;
     }
@@ -502,7 +500,6 @@ bool HookEngine::CreateHook(void* targetFunction, void* detourFunction, void** o
 
 bool HookEngine::EnableHook(void* targetFunction) {
 #ifndef _M_IX86
-    (void)targetFunction;
     return false;
 #else
     std::scoped_lock lock(mutex);
@@ -528,7 +525,6 @@ bool HookEngine::EnableAllHooks() {
 
 bool HookEngine::DisableHook(void* targetFunction) {
 #ifndef _M_IX86
-    (void)targetFunction;
     return false;
 #else
     std::scoped_lock lock(mutex);
