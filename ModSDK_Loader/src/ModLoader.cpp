@@ -72,6 +72,43 @@ namespace {
             FreeLibrary(loadedMod.handle);
         }
     }
+
+    bool TryGetValidatedModuleDescriptor(const std::string& fileName, GetModModuleFunc getModule, const CoHModSDKModuleV1*& outModule) {
+        outModule = nullptr;
+
+        if (!getModule(COHMODSDK_ABI_VERSION, &outModule)) {
+            GetLogger().LogError(
+                "Mod rejected the loader's ABI " + std::to_string(COHMODSDK_ABI_VERSION) +
+                " module request and is likely built against a different CoHModSDK version: " + fileName
+            );
+            return false;
+        }
+
+        if (outModule == nullptr) {
+            GetLogger().LogError("Mod returned a null module descriptor: " + fileName);
+            return false;
+        }
+
+        if (outModule->abiVersion != COHMODSDK_ABI_VERSION) {
+            GetLogger().LogError(
+                "Mod reported ABI " + std::to_string(outModule->abiVersion) +
+                ", but the loader requires ABI " + std::to_string(COHMODSDK_ABI_VERSION) +
+                ". The mod is outdated or built against a different CoHModSDK version: " + fileName
+            );
+            return false;
+        }
+
+        if (outModule->size < sizeof(CoHModSDKModuleV1)) {
+            GetLogger().LogError(
+                "Mod returned a module descriptor of size " + std::to_string(outModule->size) +
+                ", but the loader requires at least " + std::to_string(sizeof(CoHModSDKModuleV1)) +
+                ". The mod is likely built against an older CoHModSDK module layout: " + fileName
+            );
+            return false;
+        }
+
+        return true;
+    }
 }
 
 namespace Loader {
@@ -116,8 +153,7 @@ namespace Loader {
             }
 
             const CoHModSDKModuleV1* module = nullptr;
-            if (!getModule(COHMODSDK_ABI_VERSION, &module) || (module == nullptr) || (module->abiVersion != COHMODSDK_ABI_VERSION) || (module->size < sizeof(CoHModSDKModuleV1))) {
-                GetLogger().LogError("Mod returned an invalid module descriptor: " + line);
+            if (!TryGetValidatedModuleDescriptor(line, getModule, module)) {
                 FreeLibrary(modHandle);
                 continue;
             }
