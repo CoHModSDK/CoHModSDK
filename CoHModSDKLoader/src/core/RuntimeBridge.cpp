@@ -17,29 +17,29 @@ namespace {
     using RuntimeRegisterModFn = bool(*)(HMODULE modHandle, const CoHModSDKModuleV1* module, const CoHModSDKModContextV1** outContext);
     using RuntimeUnregisterModFn = void(*)(HMODULE modHandle);
 
-    HMODULE g_runtimeModule = nullptr;
-    RuntimeShutdownFn g_runtimeShutdown = nullptr;
-    RuntimeRegisterModFn g_runtimeRegisterMod = nullptr;
-    RuntimeUnregisterModFn g_runtimeUnregisterMod = nullptr;
+    HMODULE runtimeModule = nullptr;
+    RuntimeShutdownFn fnRuntimeShutdown = nullptr;
+    RuntimeRegisterModFn fnRuntimeRegisterMod = nullptr;
+    RuntimeUnregisterModFn fnRuntimeUnregisterMod = nullptr;
 }
 
 namespace Loader {
     void LoadRuntime() {
-        if (g_runtimeModule != nullptr) {
+        if (runtimeModule != nullptr) {
             return;
         }
 
         const std::filesystem::path runtimePath = GetRelativePath(kRuntimeDllName);
-        g_runtimeModule = LoadLibraryA(runtimePath.string().c_str());
-        if (g_runtimeModule == nullptr) {
+        runtimeModule = LoadLibraryA(runtimePath.string().c_str());
+        if (runtimeModule == nullptr) {
             FailFast("Failed to load CoHModSDKRuntime.dll");
         }
 
-        const auto runtimeInitialize = reinterpret_cast<RuntimeInitializeFn>(GetProcAddress(g_runtimeModule, "CoHModSDKRuntime_Initialize"));
-        g_runtimeShutdown = reinterpret_cast<RuntimeShutdownFn>(GetProcAddress(g_runtimeModule, "CoHModSDKRuntime_Shutdown"));
-        g_runtimeRegisterMod = reinterpret_cast<RuntimeRegisterModFn>(GetProcAddress(g_runtimeModule, "CoHModSDKRuntime_RegisterMod"));
-        g_runtimeUnregisterMod = reinterpret_cast<RuntimeUnregisterModFn>(GetProcAddress(g_runtimeModule, "CoHModSDKRuntime_UnregisterMod"));
-        if ((runtimeInitialize == nullptr) || (g_runtimeShutdown == nullptr) || (g_runtimeRegisterMod == nullptr) || (g_runtimeUnregisterMod == nullptr)) {
+        const auto runtimeInitialize = reinterpret_cast<RuntimeInitializeFn>(GetProcAddress(runtimeModule, "CoHModSDKRuntime_Initialize"));
+        fnRuntimeShutdown = reinterpret_cast<RuntimeShutdownFn>(GetProcAddress(runtimeModule, "CoHModSDKRuntime_Shutdown"));
+        fnRuntimeRegisterMod = reinterpret_cast<RuntimeRegisterModFn>(GetProcAddress(runtimeModule, "CoHModSDKRuntime_RegisterMod"));
+        fnRuntimeUnregisterMod = reinterpret_cast<RuntimeUnregisterModFn>(GetProcAddress(runtimeModule, "CoHModSDKRuntime_UnregisterMod"));
+        if ((runtimeInitialize == nullptr) || (fnRuntimeShutdown == nullptr) || (fnRuntimeRegisterMod == nullptr) || (fnRuntimeUnregisterMod == nullptr)) {
             FailFast("CoHModSDKRuntime.dll is missing required exports");
         }
 
@@ -67,18 +67,18 @@ namespace Loader {
     }
 
     void ShutdownRuntime() {
-        if (g_runtimeShutdown != nullptr) {
-            g_runtimeShutdown();
+        if (fnRuntimeShutdown != nullptr) {
+            fnRuntimeShutdown();
         }
     }
 
     bool RegisterModWithRuntime(HMODULE modHandle, const CoHModSDKModuleV1* module, const CoHModSDKModContextV1** outContext) {
-        return (g_runtimeRegisterMod != nullptr) && g_runtimeRegisterMod(modHandle, module, outContext);
+        return (fnRuntimeRegisterMod != nullptr) && fnRuntimeRegisterMod(modHandle, module, outContext);
     }
 
     void UnregisterModWithRuntime(HMODULE modHandle) {
-        if (g_runtimeUnregisterMod != nullptr) {
-            g_runtimeUnregisterMod(modHandle);
+        if (fnRuntimeUnregisterMod != nullptr) {
+            fnRuntimeUnregisterMod(modHandle);
         }
     }
 }

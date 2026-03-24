@@ -29,7 +29,7 @@ namespace {
     };
 
     Logger logger;
-    std::vector<LoadedMod> g_loadedMods;
+    std::vector<LoadedMod> loadedMods;
 
     Logger& GetLogger() {
         if (!logger.IsOpen()) {
@@ -189,19 +189,19 @@ namespace Loader {
                 continue;
             }
 
-            g_loadedMods.push_back(loadedMod);
+            loadedMods.push_back(loadedMod);
             GetLogger().LogInfo("Loaded mod: " + line);
             LogModMetadata(loadedMod);
         }
     }
 
     void NotifyModsLoaded() {
-        for (std::size_t index = 0; index < g_loadedMods.size();) {
-            const LoadedMod loadedMod = g_loadedMods[index];
+        for (std::size_t index = 0; index < loadedMods.size();) {
+            const LoadedMod loadedMod = loadedMods[index];
             if (COHMODSDK_HAS_FIELD(loadedMod.module, OnModsLoaded) && (loadedMod.module->OnModsLoaded != nullptr) && !loadedMod.module->OnModsLoaded()) {
                 GetLogger().LogError("Mod OnModsLoaded failed: " + loadedMod.fileName);
                 UnloadMod(loadedMod, true);
-                g_loadedMods.erase(g_loadedMods.begin() + static_cast<std::ptrdiff_t>(index));
+                loadedMods.erase(loadedMods.begin() + static_cast<std::ptrdiff_t>(index));
                 continue;
             }
 
@@ -214,7 +214,7 @@ namespace Loader {
     }
 
     void NotifyModsShutdown() {
-        for (const LoadedMod& loadedMod : g_loadedMods) {
+        for (const LoadedMod& loadedMod : loadedMods) {
             if (COHMODSDK_HAS_FIELD(loadedMod.module, OnShutdown) && (loadedMod.module->OnShutdown != nullptr)) {
                 loadedMod.module->OnShutdown();
                 GetLogger().LogDebug("Called OnShutdown for " + loadedMod.fileName);
