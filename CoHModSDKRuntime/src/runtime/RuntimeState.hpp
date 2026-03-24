@@ -36,7 +36,7 @@ namespace Runtime {
         std::string gameModuleName;
         std::unordered_map<HMODULE, std::unique_ptr<RegisteredMod>> registeredMods;
         CoHModSDKRuntimeInfoV1 runtimeInfo = {};
-        Logger logger;
+        Logger logger{"Runtime"};
         Config::Registry configRegistry;
         HookEngine hookEngine;
     };
