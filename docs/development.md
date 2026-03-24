@@ -149,6 +149,7 @@ Current public API groups:
   - `RegisterSchema(...)`
   - `GetValue(...)`
   - `SetValue(...)`
+  - `EnumerateMods(...)`
   - `EnumerateOptions(...)`
   - `MakeBoolValue(...)`
   - `MakeIntValue(...)`
