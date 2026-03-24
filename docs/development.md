@@ -6,11 +6,11 @@ This document covers the developer-facing side of CoHModSDK.
 
 The repository contains two Visual Studio projects:
 
-- `ModSDK_Core`
+- `CoHModSDKRuntime`
   - builds the required shared runtime: `CoHModSDKRuntime.dll`
   - also produces the import library: `CoHModSDK.lib`
-  - public header: `ModSDK_Core/include/CoHModSDK.hpp`
-- `ModSDK_Loader`
+  - public header: `CoHModSDKRuntime/include/CoHModSDK.hpp`
+- `CoHModSDKLoader`
   - builds `CoHModSDKLoader.dll`
   - used by mods that set `DllName = CoHModSDKLoader`
   - loads the shared runtime first, then loads mod DLLs listed in `CoHModSDKLoader.ini`
@@ -34,11 +34,11 @@ The GitHub workflow uses the same `Release|x86` configuration.
 ## Repository Layout
 
 ```text
-ModSDK_Core/
+CoHModSDKRuntime/
   include/CoHModSDK.hpp
   src/
 
-ModSDK_Loader/
+CoHModSDKLoader/
   src/
   res/
 ```
@@ -163,12 +163,13 @@ Mod identity is carried through an explicit runtime-owned context handle, not by
 
 The release workflow should produce two archives:
 
-- `CoHModSDK_Core-<version>.zip`
-  - `CoHModSDK.lib`
-  - `include/CoHModSDK.hpp`
-- `CoHModSDK_Loader-<version>.zip`
+- `CoHModSDK-<version>.zip`
   - `CoHModSDKLoader.dll`
   - `CoHModSDKRuntime.dll`
+  - `CoHModSDKLoader.ini`
+- `CoHModSDK-Dev-<version>.zip`
+  - `CoHModSDK.lib`
+  - `include/CoHModSDK.hpp`
 
 ## Technical Notes
 

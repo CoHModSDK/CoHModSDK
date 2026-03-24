@@ -4,7 +4,7 @@
 
 #include <filesystem>
 
-#include "../../ModSDK_Core/include/CoHModSDK.hpp"
+#include "../../CoHModSDKRuntime/include/CoHModSDK.hpp"
 #include "LoaderRuntime.hpp"
 
 namespace {

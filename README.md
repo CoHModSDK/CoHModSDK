@@ -16,12 +16,12 @@ providing:
 
 Releases are split into two parts:
 
-- `CoHModSDK_Core`
+- `CoHModSDK`
+  - for game installation
+  - contains `CoHModSDKLoader.dll`, `CoHModSDKRuntime.dll`, and `CoHModSDKLoader.ini`
+- `CoHModSDK-Dev`
   - for mod authors
   - contains `CoHModSDK.lib` and `CoHModSDK.hpp`
-- `CoHModSDK_Loader`
-  - for game installation
-  - contains `CoHModSDKLoader.dll` and `CoHModSDKRuntime.dll`
 
 ## 🔧 Installing the Loader
 

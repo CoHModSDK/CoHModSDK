@@ -31,16 +31,27 @@ jobs:
 
     - name: Create Release Zips
       run: |
-        mkdir -p CoHModSDK_Core
-        mkdir -p CoHModSDK_Core/include
-        mkdir -p CoHModSDK_Loader
-        cp -a artifact/CoHModSDK.lib CoHModSDK_Core/
-        cp -a ModSDK_Core/include/CoHModSDK.hpp CoHModSDK_Core/include/
-        cp -a artifact/CoHModSDKLoader.dll CoHModSDK_Loader/
-        cd CoHModSDK_Core
-        zip -r ../CoHModSDK_Core-${{ github.event.inputs.build-ver }}.zip .
-        cd ../CoHModSDK_Loader
-        zip -r ../CoHModSDK_Loader-${{ github.event.inputs.build-ver }}.zip .
+        mkdir -p CoHModSDK
+        printf '%s\n' \
+          '# CoHModSDK Mod Loader Configuration' \
+          '#' \
+          '# List one mod DLL filename per line.' \
+          '#' \
+          '# Example:' \
+          '#   MyMod.dll' \
+          '#   AnotherMod.dll' \
+          > CoHModSDK/CoHModSDKLoader.ini
+        cp -a artifact/CoHModSDKLoader.dll CoHModSDK/
+        cp -a artifact/CoHModSDKRuntime.dll CoHModSDK/
+        cd CoHModSDK
+        zip -r ../CoHModSDK-${{ github.event.inputs.build-ver }}.zip .
+        cd ..
+
+        mkdir -p CoHModSDK-Dev/include
+        cp -a artifact/CoHModSDK.lib CoHModSDK-Dev/
+        cp -a CoHModSDKRuntime/include/CoHModSDK.hpp CoHModSDK-Dev/include/
+        cd CoHModSDK-Dev
+        zip -r ../CoHModSDK-Dev-${{ github.event.inputs.build-ver }}.zip .
         cd ..
 
     - name: Create GitHub Release
@@ -51,8 +62,8 @@ jobs:
         tag_name: ${{ github.event.inputs.build-ver }}
         name: ${{ github.event.inputs.build-ver }}
         files: |
-          CoHModSDK_Core-${{ github.event.inputs.build-ver }}.zip
-          CoHModSDK_Loader-${{ github.event.inputs.build-ver }}.zip
+          CoHModSDK-${{ github.event.inputs.build-ver }}.zip
+          CoHModSDK-Dev-${{ github.event.inputs.build-ver }}.zip
         draft: false
         prerelease: false
         make_latest: true

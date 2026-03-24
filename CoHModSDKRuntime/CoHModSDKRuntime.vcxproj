@@ -22,7 +22,7 @@
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{50f2f6cf-21f4-44f0-ba8b-4db693221c7e}</ProjectGuid>
-    <RootNamespace>ModSDKCore</RootNamespace>
+    <RootNamespace>CoHModSDKRuntime</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

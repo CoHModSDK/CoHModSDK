@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "../../ModSDK_Core/include/CoHModSDK.hpp"
+#include "../../CoHModSDKRuntime/include/CoHModSDK.hpp"
 #include "LoaderRuntime.hpp"
 #include "RuntimeBridge.hpp"
 #include "utils/Logger.hpp"
