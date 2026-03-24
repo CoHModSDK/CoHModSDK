@@ -20,6 +20,7 @@ namespace Runtime::Config {
         bool RegisterSchema(const CoHModSDKConfigSchemaV1* schema);
         bool GetValue(const char* modId, const char* optionId, CoHModSDKConfigValueV1* outValue);
         bool SetValue(const char* modId, const char* optionId, const CoHModSDKConfigValueV1* value);
+        bool EnumerateMods(CoHModSDKConfigModVisitor visitor, void* userData);
         bool EnumerateOptions(const char* modId, CoHModSDKConfigOptionVisitor visitor, void* userData);
 
     private:

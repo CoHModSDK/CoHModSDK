@@ -41,6 +41,7 @@ namespace {
         &Runtime::RegisterConfigSchema,
         &Runtime::GetConfigValue,
         &Runtime::SetConfigValue,
+        &Runtime::EnumerateConfigMods,
         &Runtime::EnumerateConfigOptions,
     };
 }

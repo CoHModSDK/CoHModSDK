@@ -115,6 +115,7 @@ extern "C" {
         std::uint32_t optionCount;
     };
 
+    using CoHModSDKConfigModVisitor = bool(*)(const char* modId, void* userData);
     using CoHModSDKConfigOptionVisitor = bool(*)(const CoHModSDKConfigOptionV1* option, const CoHModSDKConfigValueV1* currentValue, void* userData);
 
     struct CoHModSDKApiV1 {
@@ -131,6 +132,7 @@ extern "C" {
         bool (*RegisterConfigSchema)(const CoHModSDKConfigSchemaV1* schema);
         bool (*GetConfigValue)(const char* modId, const char* optionId, CoHModSDKConfigValueV1* outValue);
         bool (*SetConfigValue)(const char* modId, const char* optionId, const CoHModSDKConfigValueV1* value);
+        bool (*EnumerateConfigMods)(CoHModSDKConfigModVisitor visitor, void* userData);
         bool (*EnumerateConfigOptions)(const char* modId, CoHModSDKConfigOptionVisitor visitor, void* userData);
     };
 
@@ -247,6 +249,7 @@ namespace ModSDK {
         using Type = CoHModSDKConfigType;
         using Flags = CoHModSDKConfigFlags;
         using ChangedCallback = CoHModSDKConfigChangedCallback;
+        using ModVisitor = CoHModSDKConfigModVisitor;
         using OptionVisitor = CoHModSDKConfigOptionVisitor;
 
         inline Value MakeBoolValue(bool value) {
@@ -287,6 +290,10 @@ namespace ModSDK {
 
         inline bool SetValue(const char* modId, const char* optionId, const Value& value) {
             return Detail::GetApi().SetConfigValue(modId, optionId, &value);
+        }
+
+        inline bool EnumerateMods(ModVisitor visitor, void* userData) {
+            return Detail::GetApi().EnumerateConfigMods(visitor, userData);
         }
 
         inline bool EnumerateOptions(const char* modId, OptionVisitor visitor, void* userData) {

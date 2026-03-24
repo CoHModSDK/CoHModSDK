@@ -21,6 +21,7 @@ namespace Runtime {
     bool RegisterConfigSchema(const CoHModSDKConfigSchemaV1* schema);
     bool GetConfigValue(const char* modId, const char* optionId, CoHModSDKConfigValueV1* outValue);
     bool SetConfigValue(const char* modId, const char* optionId, const CoHModSDKConfigValueV1* value);
+    bool EnumerateConfigMods(CoHModSDKConfigModVisitor visitor, void* userData);
     bool EnumerateConfigOptions(const char* modId, CoHModSDKConfigOptionVisitor visitor, void* userData);
     bool RegisterMod(HMODULE modHandle, const CoHModSDKModuleV1* module, const CoHModSDKModContextV1** outContext);
     void UnregisterMod(HMODULE modHandle);

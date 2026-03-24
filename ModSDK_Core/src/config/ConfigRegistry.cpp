@@ -32,7 +32,6 @@ namespace Runtime::Config {
         std::int32_t value = 0;
         std::string valueId;
         std::string label;
-        CoHModSDKConfigChoiceV1 view = {};
     };
 
     struct StoredOption {
@@ -48,6 +47,7 @@ namespace Runtime::Config {
         float step = 0.0f;
         std::uint32_t flags = CoHModSDKConfigFlags_None;
         std::vector<StoredChoice> choices;
+        std::vector<CoHModSDKConfigChoiceV1> choiceViews;
         CoHModSDKConfigChangedCallback onChanged = nullptr;
         void* userData = nullptr;
         CoHModSDKConfigOptionV1 view = {};
@@ -314,15 +314,16 @@ namespace Runtime::Config {
             }
         }
 
-        void RefreshChoiceView(StoredChoice& choice) {
-            choice.view.value = choice.value;
-            choice.view.valueId = choice.valueId.empty() ? nullptr : choice.valueId.c_str();
-            choice.view.label = choice.label.empty() ? nullptr : choice.label.c_str();
+        void RefreshChoiceView(const StoredChoice& choice, CoHModSDKConfigChoiceV1& choiceView) {
+            choiceView.value = choice.value;
+            choiceView.valueId = choice.valueId.empty() ? nullptr : choice.valueId.c_str();
+            choiceView.label = choice.label.empty() ? nullptr : choice.label.c_str();
         }
 
         void RefreshOptionView(StoredOption& option) {
-            for (StoredChoice& choice : option.choices) {
-                RefreshChoiceView(choice);
+            option.choiceViews.resize(option.choices.size());
+            for (std::size_t index = 0; index < option.choices.size(); ++index) {
+                RefreshChoiceView(option.choices[index], option.choiceViews[index]);
             }
 
             option.view.optionId = option.optionId.c_str();
@@ -335,8 +336,8 @@ namespace Runtime::Config {
             option.view.maxValue = option.maxValue;
             option.view.step = option.step;
             option.view.flags = option.flags;
-            option.view.choices = option.choices.empty() ? nullptr : &option.choices.front().view;
-            option.view.choiceCount = static_cast<std::uint32_t>(option.choices.size());
+            option.view.choices = option.choiceViews.empty() ? nullptr : option.choiceViews.data();
+            option.view.choiceCount = static_cast<std::uint32_t>(option.choiceViews.size());
             option.view.onChanged = option.onChanged;
             option.view.userData = option.userData;
         }
@@ -491,9 +492,9 @@ namespace Runtime::Config {
                 return false;
             }
 
-            RefreshOptionView(option);
             modConfig.optionIndices.emplace(option.optionId, modConfig.options.size());
             modConfig.options.push_back(std::move(option));
+            RefreshOptionView(modConfig.options.back());
         }
 
         LoadPersistedValues(modConfig.modId, modConfig);
@@ -581,6 +582,21 @@ namespace Runtime::Config {
 
         if (hasCallback) {
             callback.callback(callback.modId.c_str(), callback.optionId.c_str(), &callback.value, callback.userData);
+        }
+
+        return true;
+    }
+
+    bool Registry::EnumerateMods(CoHModSDKConfigModVisitor visitor, void* userData) {
+        if (visitor == nullptr) {
+            return false;
+        }
+
+        std::scoped_lock lock(g_registryMutex);
+        for (const auto& [modId, modConfig] : g_modConfigs) {
+            if (!visitor(modId.c_str(), userData)) {
+                break;
+            }
         }
 
         return true;

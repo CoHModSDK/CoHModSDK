@@ -302,6 +302,10 @@ namespace Runtime {
         return GetState().configRegistry.SetValue(modId, optionId, value);
     }
 
+    bool EnumerateConfigMods(CoHModSDKConfigModVisitor visitor, void* userData) {
+        return GetState().configRegistry.EnumerateMods(visitor, userData);
+    }
+
     bool EnumerateConfigOptions(const char* modId, CoHModSDKConfigOptionVisitor visitor, void* userData) {
         return GetState().configRegistry.EnumerateOptions(modId, visitor, userData);
     }
