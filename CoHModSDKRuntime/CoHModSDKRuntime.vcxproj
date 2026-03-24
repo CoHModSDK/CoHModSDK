@@ -180,6 +180,7 @@
     <ClCompile Include="src\CoHModSDK.cpp" />
     <ClCompile Include="src\config\ConfigRegistry.cpp" />
     <ClCompile Include="src\hooks\HookEngine.cpp" />
+    <ClCompile Include="src\memory\PatternScanner.cpp" />
     <ClCompile Include="src\runtime\RuntimeState.cpp" />
     <ClCompile Include="src\utils\Logger.cpp" />
   </ItemGroup>
@@ -187,8 +188,15 @@
     <ClInclude Include="include\CoHModSDK.hpp" />
     <ClInclude Include="src\config\ConfigRegistry.hpp" />
     <ClInclude Include="src\hooks\HookEngine.hpp" />
+    <ClInclude Include="src\memory\PatternScanner.hpp" />
     <ClInclude Include="src\runtime\RuntimeState.hpp" />
     <ClInclude Include="src\utils\Logger.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="res\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -17,7 +17,7 @@ The repository contains two Visual Studio projects:
 
 ## Requirements
 
-- Visual Studio 2022
+- Visual Studio 2025
 - MSVC `v143`
 - Windows SDK
 
@@ -35,11 +35,24 @@ The GitHub workflow uses the same `Release|x86` configuration.
 
 ```text
 CoHModSDKRuntime/
-  include/CoHModSDK.hpp
+  include/
+    CoHModSDK.hpp
   src/
+    CoHModSDK.cpp
+    config/
+    hooks/
+    memory/
+    runtime/
+    utils/
+  res/
 
 CoHModSDKLoader/
   src/
+    dllmain.cpp
+    core/
+    mods/
+    exports/
+    utils/
   res/
 ```
 
@@ -62,8 +75,7 @@ Minimal example:
 
 namespace {
     bool OnInitialize() {
-        auto address = ModSDK::Memory::FindPattern("WW2Mod.dll", "55 8B EC", true);
-        (void)address;
+        auto address = ModSDK::Memory::FindPattern("WW2Mod.dll", "55 8B EC");
         return true;
     }
 

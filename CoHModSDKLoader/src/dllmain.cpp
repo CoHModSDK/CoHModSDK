@@ -1,7 +1,6 @@
 #include <Windows.h>
 
-#include "LoaderRuntime.hpp"
-#include "OriginalDll.hpp"
+#include "core/Loader.hpp"
 
 BOOL APIENTRY DllMain(HMODULE hModule, unsigned long attachReason, void* reserved) {
     switch (attachReason) {

@@ -3,18 +3,15 @@
 #include <Windows.h>
 
 #include <algorithm>
-#include <array>
 #include <cstdint>
 #include <cstring>
 #include <limits>
 #include <mutex>
-#include <vector>
 
 namespace {
 #ifdef _M_IX86
     constexpr std::size_t kMinimumPatchLength = 5;
     constexpr std::size_t kMaxInstructionLength = 15;
-    constexpr std::size_t kMaxOriginalByteCount = 32;
     constexpr std::size_t kMaxTrampolineSize = 64;
 
     enum class RelativeKind {
@@ -36,18 +33,6 @@ namespace {
         std::uint8_t modrm = 0;
         bool terminal = false;
     };
-
-    struct HookEntry {
-        std::uint8_t* target = nullptr;
-        std::uint8_t* detour = nullptr;
-        std::uint8_t* trampoline = nullptr;
-        std::array<std::uint8_t, kMaxOriginalByteCount> originalBytes = {};
-        std::size_t patchLength = 0;
-        bool enabled = false;
-    };
-
-    std::mutex g_hookMutex;
-    std::vector<HookEntry> g_hooks;
 
     bool IsPrefixByte(std::uint8_t byte, bool& operandSize16, bool& addressSize16) {
         switch (byte) {
@@ -461,16 +446,6 @@ namespace {
         return false;
     }
 
-    HookEntry* FindHookEntry(void* targetFunction) {
-        for (HookEntry& hook : g_hooks) {
-            if (hook.target == targetFunction) {
-                return &hook;
-            }
-        }
-
-        return nullptr;
-    }
-
     bool WriteMemory(void* destination, const void* source, std::size_t size) {
         DWORD oldProtect = 0;
         if (!VirtualProtect(destination, size, PAGE_EXECUTE_READWRITE, &oldProtect)) {
@@ -484,184 +459,204 @@ namespace {
         VirtualProtect(destination, size, oldProtect, &restoredProtect);
         return true;
     }
-
-    bool BuildTrampoline(HookEntry& hook) {
-        hook.trampoline = static_cast<std::uint8_t*>(VirtualAlloc(nullptr, kMaxTrampolineSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
-        if (hook.trampoline == nullptr) {
-            return false;
-        }
-
-        std::size_t sourceOffset = 0;
-        std::size_t trampolineOffset = 0;
-        bool terminalInstructionCopied = false;
-
-        while (sourceOffset < kMinimumPatchLength) {
-            DecodedInstruction instruction = {};
-            if (!DecodeInstruction(hook.target + sourceOffset, instruction)) {
-                return false;
-            }
-
-            if ((sourceOffset + instruction.length) > hook.originalBytes.size()) {
-                return false;
-            }
-
-            std::size_t bytesWritten = 0;
-            if (!RelocateInstruction(hook.target + sourceOffset, instruction, hook.trampoline + trampolineOffset, bytesWritten)) {
-                return false;
-            }
-
-            sourceOffset += instruction.length;
-            trampolineOffset += bytesWritten;
-            terminalInstructionCopied = instruction.terminal;
-
-            if (terminalInstructionCopied && (sourceOffset < kMinimumPatchLength)) {
-                return false;
-            }
-        }
-
-        if (!terminalInstructionCopied) {
-            hook.trampoline[trampolineOffset++] = 0xE9;
-            std::int32_t jumpBackOffset = 0;
-            if (!TryGetRelative32(hook.trampoline + trampolineOffset - 1, kMinimumPatchLength, hook.target + sourceOffset, jumpBackOffset)) {
-                return false;
-            }
-
-            std::memcpy(hook.trampoline + trampolineOffset, &jumpBackOffset, sizeof(jumpBackOffset));
-            trampolineOffset += sizeof(jumpBackOffset);
-        }
-
-        std::memcpy(hook.originalBytes.data(), hook.target, sourceOffset);
-        hook.patchLength = sourceOffset;
-        return (trampolineOffset <= kMaxTrampolineSize);
-    }
-
-    bool EnableHookInternal(HookEntry& hook) {
-        if (hook.enabled) {
-            return true;
-        }
-
-        std::array<std::uint8_t, kMaxOriginalByteCount> patch = {};
-        patch[0] = 0xE9;
-
-        std::int32_t jumpOffset = 0;
-        if (!TryGetRelative32(hook.target, kMinimumPatchLength, hook.detour, jumpOffset)) {
-            return false;
-        }
-
-        std::memcpy(patch.data() + 1, &jumpOffset, sizeof(jumpOffset));
-        std::fill(patch.begin() + kMinimumPatchLength, patch.begin() + hook.patchLength, 0x90);
-
-        if (!WriteMemory(hook.target, patch.data(), hook.patchLength)) {
-            return false;
-        }
-
-        hook.enabled = true;
-        return true;
-    }
-
-    bool DisableHookInternal(HookEntry& hook) {
-        if (!hook.enabled) {
-            return true;
-        }
-
-        if (!WriteMemory(hook.target, hook.originalBytes.data(), hook.patchLength)) {
-            return false;
-        }
-
-        hook.enabled = false;
-        return true;
-    }
 #endif
 }
 
-namespace HookEngine {
-    bool CreateHook(void* targetFunction, void* detourFunction, void** originalFunction) {
+bool HookEngine::CreateHook(void* targetFunction, void* detourFunction, void** originalFunction) {
 #ifndef _M_IX86
-        (void)targetFunction;
-        (void)detourFunction;
-        if (originalFunction != nullptr) {
-            *originalFunction = nullptr;
+    (void)targetFunction;
+    (void)detourFunction;
+    if (originalFunction != nullptr) {
+        *originalFunction = nullptr;
+    }
+    return false;
+#else
+    if ((targetFunction == nullptr) || (detourFunction == nullptr)) {
+        return false;
+    }
+
+    std::scoped_lock lock(mutex);
+    if (FindHookEntry(targetFunction) != nullptr) {
+        return false;
+    }
+
+    HookEntry hook = {};
+    hook.target = static_cast<std::uint8_t*>(targetFunction);
+    hook.detour = static_cast<std::uint8_t*>(detourFunction);
+
+    if (!BuildTrampoline(hook)) {
+        if (hook.trampoline != nullptr) {
+            VirtualFree(hook.trampoline, 0, MEM_RELEASE);
         }
         return false;
+    }
+
+    if (originalFunction != nullptr) {
+        *originalFunction = hook.trampoline;
+    }
+
+    hooks.push_back(hook);
+    return true;
+#endif
+}
+
+bool HookEngine::EnableHook(void* targetFunction) {
+#ifndef _M_IX86
+    (void)targetFunction;
+    return false;
 #else
-        if ((targetFunction == nullptr) || (detourFunction == nullptr)) {
-            return false;
+    std::scoped_lock lock(mutex);
+    HookEntry* hook = FindHookEntry(targetFunction);
+    return (hook != nullptr) && EnableHookInternal(*hook);
+#endif
+}
+
+bool HookEngine::EnableAllHooks() {
+#ifndef _M_IX86
+    return false;
+#else
+    std::scoped_lock lock(mutex);
+    bool success = true;
+
+    for (HookEntry& hook : hooks) {
+        success = EnableHookInternal(hook) && success;
+    }
+
+    return success;
+#endif
+}
+
+bool HookEngine::DisableHook(void* targetFunction) {
+#ifndef _M_IX86
+    (void)targetFunction;
+    return false;
+#else
+    std::scoped_lock lock(mutex);
+    HookEntry* hook = FindHookEntry(targetFunction);
+    return (hook != nullptr) && DisableHookInternal(*hook);
+#endif
+}
+
+bool HookEngine::DisableAllHooks() {
+#ifndef _M_IX86
+    return false;
+#else
+    std::scoped_lock lock(mutex);
+    bool success = true;
+
+    for (HookEntry& hook : hooks) {
+        success = DisableHookInternal(hook) && success;
+    }
+
+    return success;
+#endif
+}
+
+HookEngine::HookEntry* HookEngine::FindHookEntry(void* targetFunction) {
+    for (HookEntry& hook : hooks) {
+        if (hook.target == targetFunction) {
+            return &hook;
         }
+    }
 
-        std::lock_guard<std::mutex> lock(g_hookMutex);
-        if (FindHookEntry(targetFunction) != nullptr) {
-            return false;
-        }
+    return nullptr;
+}
 
-        HookEntry hook = {};
-        hook.target = static_cast<std::uint8_t*>(targetFunction);
-        hook.detour = static_cast<std::uint8_t*>(detourFunction);
-
-        if (!BuildTrampoline(hook)) {
-            if (hook.trampoline != nullptr) {
-                VirtualFree(hook.trampoline, 0, MEM_RELEASE);
-            }
-            return false;
-        }
-
-        if (originalFunction != nullptr) {
-            *originalFunction = hook.trampoline;
-        }
-
-        g_hooks.push_back(hook);
+bool HookEngine::EnableHookInternal(HookEntry& hook) {
+#ifndef _M_IX86
+    return false;
+#else
+    if (hook.enabled) {
         return true;
-#endif
     }
 
-    bool EnableHook(void* targetFunction) {
-#ifndef _M_IX86
-        (void)targetFunction;
+    std::array<std::uint8_t, kMaxOriginalByteCount> patch = {};
+    patch[0] = 0xE9;
+
+    std::int32_t jumpOffset = 0;
+    if (!TryGetRelative32(hook.target, kMinimumPatchLength, hook.detour, jumpOffset)) {
         return false;
-#else
-        std::lock_guard<std::mutex> lock(g_hookMutex);
-        HookEntry* hook = FindHookEntry(targetFunction);
-        return (hook != nullptr) && EnableHookInternal(*hook);
-#endif
     }
 
-    bool EnableAllHooks() {
-#ifndef _M_IX86
-        return false;
-#else
-        std::lock_guard<std::mutex> lock(g_hookMutex);
-        bool success = true;
+    std::memcpy(patch.data() + 1, &jumpOffset, sizeof(jumpOffset));
+    std::fill(patch.begin() + kMinimumPatchLength, patch.begin() + hook.patchLength, 0x90);
 
-        for (HookEntry& hook : g_hooks) {
-            success = EnableHookInternal(hook) && success;
+    if (!WriteMemory(hook.target, patch.data(), hook.patchLength)) {
+        return false;
+    }
+
+    hook.enabled = true;
+    return true;
+#endif
+}
+
+bool HookEngine::DisableHookInternal(HookEntry& hook) {
+#ifndef _M_IX86
+    return false;
+#else
+    if (!hook.enabled) {
+        return true;
+    }
+
+    if (!WriteMemory(hook.target, hook.originalBytes.data(), hook.patchLength)) {
+        return false;
+    }
+
+    hook.enabled = false;
+    return true;
+#endif
+}
+
+bool HookEngine::BuildTrampoline(HookEntry& hook) {
+#ifndef _M_IX86
+    return false;
+#else
+    hook.trampoline = static_cast<std::uint8_t*>(VirtualAlloc(nullptr, kMaxTrampolineSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+    if (hook.trampoline == nullptr) {
+        return false;
+    }
+
+    std::size_t sourceOffset = 0;
+    std::size_t trampolineOffset = 0;
+    bool terminalInstructionCopied = false;
+
+    while (sourceOffset < kMinimumPatchLength) {
+        DecodedInstruction instruction = {};
+        if (!DecodeInstruction(hook.target + sourceOffset, instruction)) {
+            return false;
         }
 
-        return success;
-#endif
-    }
-
-    bool DisableHook(void* targetFunction) {
-#ifndef _M_IX86
-        (void)targetFunction;
-        return false;
-#else
-        std::lock_guard<std::mutex> lock(g_hookMutex);
-        HookEntry* hook = FindHookEntry(targetFunction);
-        return (hook != nullptr) && DisableHookInternal(*hook);
-#endif
-    }
-
-    bool DisableAllHooks() {
-#ifndef _M_IX86
-        return false;
-#else
-        std::lock_guard<std::mutex> lock(g_hookMutex);
-        bool success = true;
-
-        for (HookEntry& hook : g_hooks) {
-            success = DisableHookInternal(hook) && success;
+        if ((sourceOffset + instruction.length) > hook.originalBytes.size()) {
+            return false;
         }
 
-        return success;
-#endif
+        std::size_t bytesWritten = 0;
+        if (!RelocateInstruction(hook.target + sourceOffset, instruction, hook.trampoline + trampolineOffset, bytesWritten)) {
+            return false;
+        }
+
+        sourceOffset += instruction.length;
+        trampolineOffset += bytesWritten;
+        terminalInstructionCopied = instruction.terminal;
+
+        if (terminalInstructionCopied && (sourceOffset < kMinimumPatchLength)) {
+            return false;
+        }
     }
+
+    if (!terminalInstructionCopied) {
+        hook.trampoline[trampolineOffset++] = 0xE9;
+        std::int32_t jumpBackOffset = 0;
+        if (!TryGetRelative32(hook.trampoline + trampolineOffset - 1, kMinimumPatchLength, hook.target + sourceOffset, jumpBackOffset)) {
+            return false;
+        }
+
+        std::memcpy(hook.trampoline + trampolineOffset, &jumpBackOffset, sizeof(jumpBackOffset));
+        trampolineOffset += sizeof(jumpBackOffset);
+    }
+
+    std::memcpy(hook.originalBytes.data(), hook.target, sourceOffset);
+    hook.patchLength = sourceOffset;
+    return (trampolineOffset <= kMaxTrampolineSize);
+#endif
 }

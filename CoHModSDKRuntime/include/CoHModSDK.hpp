@@ -19,9 +19,14 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
+#include <type_traits>
 
 #define COHMODSDK_ABI_VERSION 1u
+
+#define COHMODSDK_HAS_FIELD(structPtr, fieldName) \
+    ((structPtr)->size >= offsetof(std::remove_pointer_t<decltype(structPtr)>, fieldName) + sizeof((structPtr)->fieldName))
 
 #if defined(COHMODSDK_RUNTIME_EXPORTS)
 #define COHMODSDK_RUNTIME_API extern "C" __declspec(dllexport)
@@ -124,7 +129,7 @@ extern "C" {
         const CoHModSDKRuntimeInfoV1* (*GetRuntimeInfo)();
         void (*Log)(const CoHModSDKModContextV1* modContext, CoHModSDKLogLevel level, const char* message);
         void (*ShowError)(const CoHModSDKModContextV1* modContext, const char* message);
-        std::uintptr_t (*FindPattern)(const char* moduleName, const char* signature, bool reportError);
+        std::optional<std::uintptr_t> (*FindPattern)(const char* moduleName, const char* signature);
         void (*PatchMemory)(void* destination, const void* source, std::size_t size);
         bool (*CreateHook)(void* targetFunction, void* detourFunction, void** originalFunction);
         bool (*EnableHook)(void* targetFunction);
@@ -157,7 +162,7 @@ extern "C" {
 
 #define COHMODSDK_EXPORT_MODULE(moduleInstance) \
     COHMODSDK_MODULE_API bool CoHMod_GetModule(std::uint32_t abiVersion, const CoHModSDKModuleV1** outModule) { \
-        if ((outModule == nullptr) || (abiVersion != COHMODSDK_ABI_VERSION)) { \
+        if ((outModule == nullptr) || (abiVersion < COHMODSDK_ABI_VERSION)) { \
             return false; \
         } \
         *outModule = &(moduleInstance); \
@@ -218,8 +223,8 @@ namespace ModSDK {
     }
 
     namespace Memory {
-        inline std::uintptr_t FindPattern(const char* moduleName, const char* signature, bool reportError = true) {
-            return Detail::GetApi().FindPattern(moduleName, signature, reportError);
+        inline std::optional<std::uintptr_t> FindPattern(const char* moduleName, const char* signature) {
+            return Detail::GetApi().FindPattern(moduleName, signature);
         }
 
         inline void PatchMemory(void* destination, const void* source, std::size_t size) {

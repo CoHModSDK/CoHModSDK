@@ -1,16 +1,47 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
+#include <mutex>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "../../include/CoHModSDK.hpp"
 
 class Logger;
 
 namespace Runtime::Config {
-    struct ParsedValue;
-    struct StoredChoice;
-    struct StoredOption;
-    struct StoredModConfig;
+    struct StoredChoice {
+        std::int32_t value = 0;
+        std::string valueId;
+        std::string label;
+    };
+
+    struct StoredOption {
+        std::string optionId;
+        std::string category;
+        std::string label;
+        std::string description;
+        CoHModSDKConfigType type = CoHModSDKConfigType_Bool;
+        CoHModSDKConfigValueV1 defaultValue = {};
+        CoHModSDKConfigValueV1 currentValue = {};
+        float minValue = 0.0f;
+        float maxValue = 0.0f;
+        float step = 0.0f;
+        std::uint32_t flags = CoHModSDKConfigFlags_None;
+        std::vector<StoredChoice> choices;
+        std::vector<CoHModSDKConfigChoiceV1> choiceViews;
+        CoHModSDKConfigChangedCallback onChanged = nullptr;
+        void* userData = nullptr;
+        CoHModSDKConfigOptionV1 view = {};
+    };
+
+    struct StoredModConfig {
+        std::string modId;
+        std::vector<StoredOption> options;
+        std::unordered_map<std::string, std::size_t> optionIndices;
+    };
 
     class Registry {
     public:
@@ -31,7 +62,8 @@ namespace Runtime::Config {
         void LogWarning(const std::string& message) const;
         void LogInfo(const std::string& message) const;
 
-    private:
+        std::mutex mutex;
+        std::unordered_map<std::string, StoredModConfig> modConfigs;
         std::filesystem::path configDirectory;
         Logger* logger = nullptr;
     };

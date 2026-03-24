@@ -4,8 +4,8 @@
 
 #include <filesystem>
 
-#include "../../CoHModSDKRuntime/include/CoHModSDK.hpp"
-#include "LoaderRuntime.hpp"
+#include "../../../CoHModSDKRuntime/include/CoHModSDK.hpp"
+#include "Loader.hpp"
 
 namespace {
     constexpr char kRuntimeDllName[] = "CoHModSDKRuntime.dll";

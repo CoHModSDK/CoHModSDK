@@ -25,18 +25,18 @@ LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE
 BEGIN
     "#include ""winres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE
 BEGIN
     "\r\n"
     "\0"
@@ -78,12 +78,12 @@ BEGIN
         BLOCK "040704b0"
         BEGIN
             VALUE "CompanyName", "Tosox"
-            VALUE "FileDescription", "CoHModSDK mod loader for Company of Heroes"
+            VALUE "FileDescription", "Shared runtime SDK for Company of Heroes"
             VALUE "FileVersion", "0.4.0"
-            VALUE "InternalName", "CoHModSDKLoader"
-            VALUE "LegalCopyright", "Copyright © 2026"
-            VALUE "OriginalFilename", "CoHModSDKLoader.dll"
-            VALUE "ProductName", "CoHModSDKLoader"
+            VALUE "InternalName", "CoHModSDKRuntime"
+            VALUE "LegalCopyright", "Copyright \251 2026"
+            VALUE "OriginalFilename", "CoHModSDKRuntime.dll"
+            VALUE "ProductName", "CoHModSDKRuntime"
             VALUE "ProductVersion", "0.4.0"
         END
     END
@@ -107,4 +107,3 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-

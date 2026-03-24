@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-#include "../../CoHModSDKRuntime/include/CoHModSDK.hpp"
+#include "../../../CoHModSDKRuntime/include/CoHModSDK.hpp"
 
 namespace Loader {
     void LoadRuntime();

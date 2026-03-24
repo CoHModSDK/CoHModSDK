@@ -1,7 +1,7 @@
 #include "../include/CoHModSDK.hpp"
 
-#include "hooks/HookEngine.hpp"
 #include "runtime/RuntimeState.hpp"
+
 namespace {
     const CoHModSDKRuntimeInfoV1* GetRuntimeInfoImpl() {
         return Runtime::GetRuntimeInfo();
@@ -15,16 +15,44 @@ namespace {
         Runtime::ShowModError(modContext, message);
     }
 
+    std::optional<std::uintptr_t> FindPatternImpl(const char* moduleName, const char* signature) {
+        return Runtime::FindPattern(moduleName, signature);
+    }
+
+    void PatchMemoryImpl(void* destination, const void* source, std::size_t size) {
+        Runtime::PatchMemory(destination, source, size);
+    }
+
     bool CreateHookImpl(void* targetFunction, void* detourFunction, void** originalFunction) {
-        return HookEngine::CreateHook(targetFunction, detourFunction, originalFunction);
+        return Runtime::GetState().hookEngine.CreateHook(targetFunction, detourFunction, originalFunction);
     }
 
     bool EnableHookImpl(void* targetFunction) {
-        return HookEngine::EnableHook(targetFunction);
+        return Runtime::GetState().hookEngine.EnableHook(targetFunction);
     }
 
     bool DisableHookImpl(void* targetFunction) {
-        return HookEngine::DisableHook(targetFunction);
+        return Runtime::GetState().hookEngine.DisableHook(targetFunction);
+    }
+
+    bool RegisterConfigSchemaImpl(const CoHModSDKConfigSchemaV1* schema) {
+        return Runtime::GetState().configRegistry.RegisterSchema(schema);
+    }
+
+    bool GetConfigValueImpl(const char* modId, const char* optionId, CoHModSDKConfigValueV1* outValue) {
+        return Runtime::GetState().configRegistry.GetValue(modId, optionId, outValue);
+    }
+
+    bool SetConfigValueImpl(const char* modId, const char* optionId, const CoHModSDKConfigValueV1* value) {
+        return Runtime::GetState().configRegistry.SetValue(modId, optionId, value);
+    }
+
+    bool EnumerateConfigModsImpl(CoHModSDKConfigModVisitor visitor, void* userData) {
+        return Runtime::GetState().configRegistry.EnumerateMods(visitor, userData);
+    }
+
+    bool EnumerateConfigOptionsImpl(const char* modId, CoHModSDKConfigOptionVisitor visitor, void* userData) {
+        return Runtime::GetState().configRegistry.EnumerateOptions(modId, visitor, userData);
     }
 
     const CoHModSDKApiV1 kApi = {
@@ -33,16 +61,16 @@ namespace {
         &GetRuntimeInfoImpl,
         &LogImpl,
         &ShowErrorImpl,
-        &Runtime::FindPattern,
-        &Runtime::PatchMemory,
+        &FindPatternImpl,
+        &PatchMemoryImpl,
         &CreateHookImpl,
         &EnableHookImpl,
         &DisableHookImpl,
-        &Runtime::RegisterConfigSchema,
-        &Runtime::GetConfigValue,
-        &Runtime::SetConfigValue,
-        &Runtime::EnumerateConfigMods,
-        &Runtime::EnumerateConfigOptions,
+        &RegisterConfigSchemaImpl,
+        &GetConfigValueImpl,
+        &SetConfigValueImpl,
+        &EnumerateConfigModsImpl,
+        &EnumerateConfigOptionsImpl,
     };
 }
 
@@ -63,7 +91,7 @@ extern "C" void CoHModSDKRuntime_UnregisterMod(HMODULE modHandle) {
 }
 
 extern "C" bool CoHModSDK_GetApi(std::uint32_t abiVersion, const CoHModSDKApiV1** outApi) {
-    if ((outApi == nullptr) || (abiVersion != COHMODSDK_ABI_VERSION)) {
+    if ((outApi == nullptr) || (abiVersion > COHMODSDK_ABI_VERSION)) {
         return false;
     }
 

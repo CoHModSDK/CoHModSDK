@@ -17,6 +17,21 @@ void Logger::Open(const std::filesystem::path& logPath) {
         return;
     }
 
+    const std::filesystem::path backupLogPath = logPath.string() + ".bak";
+    if (std::filesystem::exists(backupLogPath)) {
+        std::filesystem::remove(backupLogPath, error);
+        if (error) {
+            return;
+        }
+    }
+
+    if (std::filesystem::exists(logPath)) {
+        std::filesystem::rename(logPath, backupLogPath, error);
+        if (error) {
+            return;
+        }
+    }
+
     logFile.open(logPath, std::ios::out | std::ios::trunc);
     if (logFile.is_open()) {
         LogDebug("Log file created");

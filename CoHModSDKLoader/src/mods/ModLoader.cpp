@@ -9,9 +9,9 @@
 #include <utility>
 #include <vector>
 
-#include "../../CoHModSDKRuntime/include/CoHModSDK.hpp"
-#include "LoaderRuntime.hpp"
-#include "RuntimeBridge.hpp"
+#include "../../../CoHModSDKRuntime/include/CoHModSDK.hpp"
+#include "core/Loader.hpp"
+#include "core/RuntimeBridge.hpp"
 #include "utils/Logger.hpp"
 
 namespace {
@@ -49,21 +49,26 @@ namespace {
         return value.substr(first, last - first + 1);
     }
 
+    const char* SafeString(const char* value) {
+        return (value != nullptr) ? value : "<unknown>";
+    }
+
     void LogModMetadata(const LoadedMod& loadedMod) {
         if (loadedMod.module == nullptr) {
             return;
         }
 
+        const auto* mod = loadedMod.module;
         std::string message = "Loaded mod metadata for " + loadedMod.fileName + ": ";
-        message += "modid=" + std::string(loadedMod.module->modId == nullptr ? "<unknown>" : loadedMod.module->modId);
-        message += ", name=" + std::string(loadedMod.module->name == nullptr ? "<unknown>" : loadedMod.module->name);
-        message += ", version=" + std::string(loadedMod.module->version == nullptr ? "<unknown>" : loadedMod.module->version);
-        message += ", author=" + std::string(loadedMod.module->author == nullptr ? "<unknown>" : loadedMod.module->author);
+        message += "modid=" + std::string(SafeString(mod->modId));
+        message += ", name=" + std::string(SafeString(mod->name));
+        message += ", version=" + std::string(SafeString(mod->version));
+        message += ", author=" + std::string(SafeString(mod->author));
         GetLogger().LogInfo(message);
     }
 
     void UnloadMod(const LoadedMod& loadedMod, bool callShutdown) {
-        if (callShutdown && (loadedMod.module != nullptr) && (loadedMod.module->OnShutdown != nullptr)) {
+        if (callShutdown && (loadedMod.module != nullptr) && COHMODSDK_HAS_FIELD(loadedMod.module, OnShutdown) && (loadedMod.module->OnShutdown != nullptr)) {
             loadedMod.module->OnShutdown();
         }
 
@@ -89,20 +94,21 @@ namespace {
             return false;
         }
 
-        if (outModule->abiVersion != COHMODSDK_ABI_VERSION) {
+        if (outModule->abiVersion > COHMODSDK_ABI_VERSION) {
             GetLogger().LogError(
                 "Mod reported ABI " + std::to_string(outModule->abiVersion) +
-                ", but the loader requires ABI " + std::to_string(COHMODSDK_ABI_VERSION) +
-                ". The mod is outdated or built against a different CoHModSDK version: " + fileName
+                ", but the loader only supports up to ABI " + std::to_string(COHMODSDK_ABI_VERSION) +
+                ". The loader may need to be updated: " + fileName
             );
             return false;
         }
 
-        if (outModule->size < sizeof(CoHModSDKModuleV1)) {
+        constexpr std::size_t kMinModuleSize = offsetof(CoHModSDKModuleV1, author) + sizeof(CoHModSDKModuleV1::author);
+        if (outModule->size < kMinModuleSize) {
             GetLogger().LogError(
                 "Mod returned a module descriptor of size " + std::to_string(outModule->size) +
-                ", but the loader requires at least " + std::to_string(sizeof(CoHModSDKModuleV1)) +
-                ". The mod is likely built against an older CoHModSDK module layout: " + fileName
+                ", but the loader requires at least " + std::to_string(kMinModuleSize) +
+                ". The mod is likely built against an incompatible CoHModSDK version: " + fileName
             );
             return false;
         }
@@ -177,7 +183,7 @@ namespace Loader {
             }
 
             setContext(modContext);
-            if ((loadedMod.module->OnInitialize != nullptr) && !loadedMod.module->OnInitialize()) {
+            if (COHMODSDK_HAS_FIELD(loadedMod.module, OnInitialize) && (loadedMod.module->OnInitialize != nullptr) && !loadedMod.module->OnInitialize()) {
                 GetLogger().LogError("Mod OnInitialize failed: " + line);
                 UnloadMod(loadedMod, true);
                 continue;
@@ -192,14 +198,14 @@ namespace Loader {
     void NotifyModsLoaded() {
         for (std::size_t index = 0; index < g_loadedMods.size();) {
             const LoadedMod loadedMod = g_loadedMods[index];
-            if ((loadedMod.module->OnModsLoaded != nullptr) && !loadedMod.module->OnModsLoaded()) {
+            if (COHMODSDK_HAS_FIELD(loadedMod.module, OnModsLoaded) && (loadedMod.module->OnModsLoaded != nullptr) && !loadedMod.module->OnModsLoaded()) {
                 GetLogger().LogError("Mod OnModsLoaded failed: " + loadedMod.fileName);
                 UnloadMod(loadedMod, true);
                 g_loadedMods.erase(g_loadedMods.begin() + static_cast<std::ptrdiff_t>(index));
                 continue;
             }
 
-            if (loadedMod.module->OnModsLoaded != nullptr) {
+            if (COHMODSDK_HAS_FIELD(loadedMod.module, OnModsLoaded) && (loadedMod.module->OnModsLoaded != nullptr)) {
                 GetLogger().LogDebug("Called OnModsLoaded for " + loadedMod.fileName);
             }
 
@@ -209,7 +215,7 @@ namespace Loader {
 
     void NotifyModsShutdown() {
         for (const LoadedMod& loadedMod : g_loadedMods) {
-            if (loadedMod.module->OnShutdown != nullptr) {
+            if (COHMODSDK_HAS_FIELD(loadedMod.module, OnShutdown) && (loadedMod.module->OnShutdown != nullptr)) {
                 loadedMod.module->OnShutdown();
                 GetLogger().LogDebug("Called OnShutdown for " + loadedMod.fileName);
             }

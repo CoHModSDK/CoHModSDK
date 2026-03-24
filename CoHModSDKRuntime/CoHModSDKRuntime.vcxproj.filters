@@ -8,6 +8,9 @@
     <Filter Include="include">
       <UniqueIdentifier>{79919f90-f2ca-4f90-87c0-2a6384721cfa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="res">
+      <UniqueIdentifier>{e1f2a3b4-c5d6-7890-abcd-ef2345678901}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\hooks">
       <UniqueIdentifier>{05626f60-edbc-42e0-a0a4-b713129339f9}</UniqueIdentifier>
     </Filter>
@@ -16,6 +19,9 @@
     </Filter>
     <Filter Include="src\runtime">
       <UniqueIdentifier>{77ae88ae-c48e-4dd2-85cf-3eb6d91190a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\memory">
+      <UniqueIdentifier>{a3b2c1d0-e4f5-6789-abcd-ef0123456789}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\utils">
       <UniqueIdentifier>{07a1db1c-8afd-448d-bcae-cf9c7865a7ea}</UniqueIdentifier>
@@ -34,6 +40,9 @@
     <ClCompile Include="src\runtime\RuntimeState.cpp">
       <Filter>src\runtime</Filter>
     </ClCompile>
+    <ClCompile Include="src\memory\PatternScanner.cpp">
+      <Filter>src\memory</Filter>
+    </ClCompile>
     <ClCompile Include="src\utils\Logger.cpp">
       <Filter>src\utils</Filter>
     </ClCompile>
@@ -51,8 +60,19 @@
     <ClInclude Include="src\runtime\RuntimeState.hpp">
       <Filter>src\runtime</Filter>
     </ClInclude>
+    <ClInclude Include="src\memory\PatternScanner.hpp">
+      <Filter>src\memory</Filter>
+    </ClInclude>
     <ClInclude Include="src\utils\Logger.hpp">
       <Filter>src\utils</Filter>
     </ClInclude>
+    <ClInclude Include="res\resource.h">
+      <Filter>res</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\resource.rc">
+      <Filter>res</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

@@ -1,9 +1,10 @@
-#include <Windows.h>
-#include <system_error>
-#include <filesystem>
-#include <fstream>
 #include "Logger.hpp"
+
+#include <Windows.h>
+
 #include <cstdio>
+#include <filesystem>
+#include <system_error>
 
 void Logger::Open(const std::filesystem::path& logPath) {
     if (logFile.is_open()) {
@@ -37,6 +38,22 @@ void Logger::Open(const std::filesystem::path& logPath) {
     }
 }
 
+void Logger::LogDebug(const std::string& message, const char* source) {
+    LogMessage("DEBUG", message, source);
+}
+
+void Logger::LogInfo(const std::string& message, const char* source) {
+    LogMessage("INFO", message, source);
+}
+
+void Logger::LogWarning(const std::string& message, const char* source) {
+    LogMessage("WARN", message, source);
+}
+
+void Logger::LogError(const std::string& message, const char* source) {
+    LogMessage("ERROR", message, source);
+}
+
 bool Logger::IsOpen() const {
     return logFile.is_open();
 }
@@ -57,27 +74,16 @@ std::string Logger::GetCurrentTimestamp() const {
     return buffer;
 }
 
-void Logger::LogMessage(const char* level, const std::string& message) {
+void Logger::LogMessage(const char* level, const std::string& message, const char* source) {
     if (!logFile.is_open()) {
         return;
     }
 
-    logFile << GetCurrentTimestamp() << "[" << level << "] " << message << std::endl;
+    logFile << GetCurrentTimestamp();
+    if ((source != nullptr) && (*source != '\0')) {
+        logFile << "[" << source << "]";
+    }
+
+    logFile << "[" << level << "] " << message << std::endl;
     logFile.flush();
-}
-
-void Logger::LogDebug(const std::string& message) {
-    LogMessage("DEBUG", message);
-}
-
-void Logger::LogInfo(const std::string& message) {
-    LogMessage("INFO", message);
-}
-
-void Logger::LogWarning(const std::string& message) {
-    LogMessage("WARN", message);
-}
-
-void Logger::LogError(const std::string& message) {
-    LogMessage("ERROR", message);
 }

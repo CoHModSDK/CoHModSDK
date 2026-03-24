@@ -2,81 +2,14 @@
 
 #include <Windows.h>
 
-#include <cctype>
-#include <cstdlib>
 #include <cstring>
 #include <filesystem>
-#include <memory>
-#include <mutex>
-#include <stdexcept>
-#include <string>
-#include <unordered_map>
-#include <vector>
 
-#include "../config/ConfigRegistry.hpp"
-#include "../hooks/HookEngine.hpp"
-#include "../utils/Logger.hpp"
-
-struct CoHModSDKModContextV1 {
-    HMODULE moduleHandle = nullptr;
-};
+#include "../memory/PatternScanner.hpp"
 
 namespace Runtime {
     namespace {
-        constexpr char kRuntimeVersion[] = "0.1.0";
-
-        struct RegisteredMod {
-            std::string modId;
-            std::string title;
-            CoHModSDKModContextV1 context = {};
-        };
-
-        struct State {
-            std::mutex mutex;
-            bool initialized = false;
-            std::string loaderDirectory;
-            std::string modsDirectory;
-            std::string configDirectory;
-            std::string logPath;
-            std::string gameModuleName;
-            std::unordered_map<HMODULE, std::unique_ptr<RegisteredMod>> registeredMods;
-            CoHModSDKRuntimeInfoV1 runtimeInfo = {};
-            Logger logger;
-            Config::Registry configRegistry;
-        };
-
-        State& GetState() {
-            static State state;
-            return state;
-        }
-
-        std::vector<int> PatternToBytes(const char* pattern) {
-            std::vector<int> bytes;
-            char* start = const_cast<char*>(pattern);
-            char* end = const_cast<char*>(pattern) + std::strlen(pattern);
-
-            for (char* current = start; current < end; ++current) {
-                if (*current == '?') {
-                    ++current;
-                    if ((current < end) && (*current == '?')) {
-                        ++current;
-                    }
-
-                    bytes.push_back(-1);
-                    if (current >= end) {
-                        break;
-                    }
-                } else if (*current != ' ') {
-                    bytes.push_back(std::strtoul(current, &current, 16));
-                }
-            }
-
-            return bytes;
-        }
-
-        void ShowRuntimeError(const std::string& message) {
-            MessageBoxA(nullptr, message.c_str(), "CoHModSDK Runtime Error", MB_ICONERROR);
-        }
+        constexpr char kRuntimeVersion[] = "0.4.0";
 
         HMODULE ResolveHandleFromContext(const CoHModSDKModContextV1* modContext) {
             if (modContext == nullptr) {
@@ -101,6 +34,11 @@ namespace Runtime {
 
             return "CoHModSDK Mod";
         }
+    }
+
+    State& GetState() {
+        static State state;
+        return state;
     }
 
     bool Initialize(const CoHModSDKRuntimeInitV1* init) {
@@ -164,10 +102,6 @@ namespace Runtime {
         return &state.runtimeInfo;
     }
 
-    Logger& GetLogger() {
-        return GetState().logger;
-    }
-
     void LogForMod(const CoHModSDKModContextV1* modContext, CoHModSDKLogLevel level, const char* message) {
         if ((message == nullptr) || (*message == '\0')) {
             return;
@@ -202,63 +136,8 @@ namespace Runtime {
         }
     }
 
-    std::uintptr_t FindPattern(const char* moduleName, const char* signature, bool reportError) {
-        if (signature == nullptr) {
-            return 0;
-        }
-
-        State& state = GetState();
-        const char* effectiveModuleName = moduleName;
-        if ((effectiveModuleName == nullptr) || (*effectiveModuleName == '\0')) {
-            effectiveModuleName = state.gameModuleName.c_str();
-        }
-
-        HMODULE moduleHandle = GetModuleHandleA(effectiveModuleName);
-        if (moduleHandle == nullptr) {
-            if (reportError) {
-                const std::string message = "Unable to get a handle for module '" + std::string(effectiveModuleName) + "'";
-                state.logger.LogError(message);
-                ShowRuntimeError(message);
-                throw std::runtime_error(message);
-            }
-
-            return 0;
-        }
-
-        PIMAGE_DOS_HEADER dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(moduleHandle);
-        PIMAGE_NT_HEADERS ntHeaders = reinterpret_cast<PIMAGE_NT_HEADERS>(reinterpret_cast<std::uint8_t*>(moduleHandle) + dosHeader->e_lfanew);
-        const std::size_t sizeOfImage = ntHeaders->OptionalHeader.SizeOfImage;
-        std::vector<int> patternBytes = PatternToBytes(signature);
-        std::uint8_t* scanBytes = reinterpret_cast<std::uint8_t*>(moduleHandle);
-
-        const std::size_t patternSize = patternBytes.size();
-        if ((patternSize == 0u) || (sizeOfImage < patternSize)) {
-            return 0;
-        }
-
-        for (std::size_t index = 0; index <= sizeOfImage - patternSize; ++index) {
-            bool found = true;
-            for (std::size_t patternIndex = 0; patternIndex < patternSize; ++patternIndex) {
-                const int expectedByte = patternBytes[patternIndex];
-                if ((expectedByte != -1) && (scanBytes[index + patternIndex] != expectedByte)) {
-                    found = false;
-                    break;
-                }
-            }
-
-            if (found) {
-                return reinterpret_cast<std::uintptr_t>(&scanBytes[index]);
-            }
-        }
-
-        if (reportError) {
-            const std::string message = "Unknown signature in module " + std::string(effectiveModuleName) + ": " + signature;
-            state.logger.LogError(message);
-            ShowRuntimeError(message);
-            throw std::runtime_error(message);
-        }
-
-        return 0;
+    std::optional<std::uintptr_t> FindPattern(const char* moduleName, const char* signature) {
+        return PatternScanner::Find(moduleName, signature, GetState().logger);
     }
 
     void PatchMemory(void* destination, const void* source, std::size_t size) {
@@ -288,26 +167,6 @@ namespace Runtime {
         }
 
         MessageBoxA(nullptr, message, title.c_str(), MB_OK | MB_ICONERROR);
-    }
-
-    bool RegisterConfigSchema(const CoHModSDKConfigSchemaV1* schema) {
-        return GetState().configRegistry.RegisterSchema(schema);
-    }
-
-    bool GetConfigValue(const char* modId, const char* optionId, CoHModSDKConfigValueV1* outValue) {
-        return GetState().configRegistry.GetValue(modId, optionId, outValue);
-    }
-
-    bool SetConfigValue(const char* modId, const char* optionId, const CoHModSDKConfigValueV1* value) {
-        return GetState().configRegistry.SetValue(modId, optionId, value);
-    }
-
-    bool EnumerateConfigMods(CoHModSDKConfigModVisitor visitor, void* userData) {
-        return GetState().configRegistry.EnumerateMods(visitor, userData);
-    }
-
-    bool EnumerateConfigOptions(const char* modId, CoHModSDKConfigOptionVisitor visitor, void* userData) {
-        return GetState().configRegistry.EnumerateOptions(modId, visitor, userData);
     }
 
     bool RegisterMod(HMODULE modHandle, const CoHModSDKModuleV1* module, const CoHModSDKModContextV1** outContext) {

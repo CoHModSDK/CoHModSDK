@@ -7,59 +7,25 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <mutex>
 #include <sstream>
 #include <string>
-#include <unordered_map>
 #include <utility>
-#include <vector>
 
 #include "../utils/Logger.hpp"
 
 namespace Runtime::Config {
-    struct ParsedValue {
-        enum class Kind {
-            Bool,
-            Number,
+    namespace {
+        struct ParsedValue {
+            enum class Kind {
+                Bool,
+                Number,
+            };
+
+            Kind kind = Kind::Bool;
+            bool boolValue = false;
+            double numberValue = 0.0;
         };
 
-        Kind kind = Kind::Bool;
-        bool boolValue = false;
-        double numberValue = 0.0;
-    };
-
-    struct StoredChoice {
-        std::int32_t value = 0;
-        std::string valueId;
-        std::string label;
-    };
-
-    struct StoredOption {
-        std::string optionId;
-        std::string category;
-        std::string label;
-        std::string description;
-        CoHModSDKConfigType type = CoHModSDKConfigType_Bool;
-        CoHModSDKConfigValueV1 defaultValue = {};
-        CoHModSDKConfigValueV1 currentValue = {};
-        float minValue = 0.0f;
-        float maxValue = 0.0f;
-        float step = 0.0f;
-        std::uint32_t flags = CoHModSDKConfigFlags_None;
-        std::vector<StoredChoice> choices;
-        std::vector<CoHModSDKConfigChoiceV1> choiceViews;
-        CoHModSDKConfigChangedCallback onChanged = nullptr;
-        void* userData = nullptr;
-        CoHModSDKConfigOptionV1 view = {};
-    };
-
-    struct StoredModConfig {
-        std::string modId;
-        std::vector<StoredOption> options;
-        std::unordered_map<std::string, std::size_t> optionIndices;
-    };
-
-    namespace {
         struct PendingCallback {
             std::string modId;
             std::string optionId;
@@ -67,9 +33,6 @@ namespace Runtime::Config {
             CoHModSDKConfigChangedCallback callback = nullptr;
             void* userData = nullptr;
         };
-
-        std::mutex g_registryMutex;
-        std::unordered_map<std::string, StoredModConfig> g_modConfigs;
 
         class JsonParser {
         public:
@@ -251,7 +214,6 @@ namespace Runtime::Config {
                 }
             }
 
-        private:
             std::string_view text;
             std::size_t position = 0;
         };
@@ -434,13 +396,13 @@ namespace Runtime::Config {
         std::filesystem::create_directories(this->configDirectory, error);
         (void)error;
 
-        std::scoped_lock lock(g_registryMutex);
-        g_modConfigs.clear();
+        std::scoped_lock lock(mutex);
+        modConfigs.clear();
     }
 
     void Registry::Shutdown() {
-        std::scoped_lock lock(g_registryMutex);
-        g_modConfigs.clear();
+        std::scoped_lock lock(mutex);
+        modConfigs.clear();
     }
 
     bool Registry::RegisterSchema(const CoHModSDKConfigSchemaV1* schema) {
@@ -501,13 +463,13 @@ namespace Runtime::Config {
 
         std::vector<PendingCallback> callbacks;
         {
-            std::scoped_lock lock(g_registryMutex);
-            if (g_modConfigs.contains(modConfig.modId)) {
+            std::scoped_lock lock(mutex);
+            if (modConfigs.contains(modConfig.modId)) {
                 LogWarning("Config schema for mod '" + modConfig.modId + "' was already registered");
                 return false;
             }
 
-            auto [iterator, inserted] = g_modConfigs.emplace(modConfig.modId, std::move(modConfig));
+            auto [iterator, inserted] = modConfigs.emplace(modConfig.modId, std::move(modConfig));
             if (!inserted) {
                 return false;
             }
@@ -525,9 +487,9 @@ namespace Runtime::Config {
             return false;
         }
 
-        std::scoped_lock lock(g_registryMutex);
-        const auto modIterator = g_modConfigs.find(modId);
-        if (modIterator == g_modConfigs.end()) {
+        std::scoped_lock lock(mutex);
+        const auto modIterator = modConfigs.find(modId);
+        if (modIterator == modConfigs.end()) {
             return false;
         }
 
@@ -549,9 +511,9 @@ namespace Runtime::Config {
         bool hasCallback = false;
 
         {
-            std::scoped_lock lock(g_registryMutex);
-            const auto modIterator = g_modConfigs.find(modId);
-            if (modIterator == g_modConfigs.end()) {
+            std::scoped_lock lock(mutex);
+            const auto modIterator = modConfigs.find(modId);
+            if (modIterator == modConfigs.end()) {
                 return false;
             }
 
@@ -592,8 +554,8 @@ namespace Runtime::Config {
             return false;
         }
 
-        std::scoped_lock lock(g_registryMutex);
-        for (const auto& [modId, modConfig] : g_modConfigs) {
+        std::scoped_lock lock(mutex);
+        for (const auto& [modId, modConfig] : modConfigs) {
             if (!visitor(modId.c_str(), userData)) {
                 break;
             }
@@ -607,9 +569,9 @@ namespace Runtime::Config {
             return false;
         }
 
-        std::scoped_lock lock(g_registryMutex);
-        const auto modIterator = g_modConfigs.find(modId);
-        if (modIterator == g_modConfigs.end()) {
+        std::scoped_lock lock(mutex);
+        const auto modIterator = modConfigs.find(modId);
+        if (modIterator == modConfigs.end()) {
             return false;
         }
 
