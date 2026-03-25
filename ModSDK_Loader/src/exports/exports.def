@@ -1,7 +1,0 @@
-LIBRARY "WW2Mod"
-
-EXPORTS
-    ForwardStdMutexCtor @1 NONAME
-    ForwardStdInitLocksAssign @2 NONAME
-    GetDllInterface=ExportedGetDllInterface @3
-    GetDllVersion=ExportedGetDllVersion @4

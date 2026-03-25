@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{79919f90-f2ca-4f90-87c0-2a6384721cfa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="res">
+      <UniqueIdentifier>{e1f2a3b4-c5d6-7890-abcd-ef2345678901}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\hooks">
+      <UniqueIdentifier>{05626f60-edbc-42e0-a0a4-b713129339f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\config">
+      <UniqueIdentifier>{d48ad08a-55fd-438f-b14f-3536b07068fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\runtime">
+      <UniqueIdentifier>{77ae88ae-c48e-4dd2-85cf-3eb6d91190a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\memory">
+      <UniqueIdentifier>{a3b2c1d0-e4f5-6789-abcd-ef0123456789}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utils">
+      <UniqueIdentifier>{07a1db1c-8afd-448d-bcae-cf9c7865a7ea}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\CoHModSDK.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\config\ConfigRegistry.cpp">
+      <Filter>src\config</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hooks\HookEngine.cpp">
+      <Filter>src\hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="src\runtime\RuntimeState.cpp">
+      <Filter>src\runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="src\memory\PatternScanner.cpp">
+      <Filter>src\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils\Logger.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\CoHModSDK.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\config\ConfigRegistry.hpp">
+      <Filter>src\config</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hooks\HookEngine.hpp">
+      <Filter>src\hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\runtime\RuntimeState.hpp">
+      <Filter>src\runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="src\memory\PatternScanner.hpp">
+      <Filter>src\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\Logger.hpp">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="res\resource.h">
+      <Filter>res</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\resource.rc">
+      <Filter>res</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

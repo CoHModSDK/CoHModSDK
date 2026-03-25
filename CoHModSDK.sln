@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.13.35825.156
+# Visual Studio Version 18
+VisualStudioVersion = 18.4.11612.150 stable
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModSDK_Core", "ModSDK_Core\ModSDK_Core.vcxproj", "{50F2F6CF-21F4-44F0-BA8B-4DB693221C7E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CoHModSDKRuntime", "CoHModSDKRuntime\CoHModSDKRuntime.vcxproj", "{50F2F6CF-21F4-44F0-BA8B-4DB693221C7E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModSDK_Loader", "ModSDK_Loader\ModSDK_Loader.vcxproj", "{4B226E71-0595-43BD-9F9F-818026FE3D55}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CoHModSDKLoader", "CoHModSDKLoader\CoHModSDKLoader.vcxproj", "{4B226E71-0595-43BD-9F9F-818026FE3D55}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

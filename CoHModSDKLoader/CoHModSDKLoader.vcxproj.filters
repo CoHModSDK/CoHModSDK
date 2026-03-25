@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="res">
+      <UniqueIdentifier>{012043de-f169-4b8a-bbd7-6d7623a6c47f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{9bcb5222-4f77-4db8-8c80-8d6f7f57d801}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="src\exports">
+      <UniqueIdentifier>{45a9cd95-54fe-4204-b294-8c11b8122833}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="src\core">
+      <UniqueIdentifier>{b1c2d3e4-f5a6-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\mods">
+      <UniqueIdentifier>{c2d3e4f5-a6b7-8901-bcde-f12345678901}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utils">
+      <UniqueIdentifier>{75773edb-4ab3-40b7-8c67-3a4cea6adbef}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\dllmain.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Loader.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\RuntimeBridge.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mods\ModLoader.cpp">
+      <Filter>src\mods</Filter>
+    </ClCompile>
+    <ClCompile Include="src\exports\ProxyExports.cpp">
+      <Filter>src\exports</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils\Logger.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="res\resource.h">
+      <Filter>res</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\Loader.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\RuntimeBridge.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mods\ModLoader.hpp">
+      <Filter>src\mods</Filter>
+    </ClInclude>
+    <ClInclude Include="src\exports\ProxyExports.hpp">
+      <Filter>src\exports</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\Logger.hpp">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\resource.rc">
+      <Filter>res</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
