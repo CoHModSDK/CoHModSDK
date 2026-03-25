@@ -205,9 +205,7 @@ namespace Loader {
                 continue;
             }
 
-            if (COHMODSDK_HAS_FIELD(loadedMod.module, OnModsLoaded) && (loadedMod.module->OnModsLoaded != nullptr)) {
-                GetLogger().LogDebug("Called OnModsLoaded for " + loadedMod.fileName);
-            }
+            GetLogger().LogDebug("Called OnModsLoaded for " + loadedMod.fileName);
 
             ++index;
         }
@@ -221,6 +219,7 @@ namespace Loader {
             }
 
             UnregisterModWithRuntime(loadedMod.handle);
+            FreeLibrary(loadedMod.handle);
         }
     }
 }
