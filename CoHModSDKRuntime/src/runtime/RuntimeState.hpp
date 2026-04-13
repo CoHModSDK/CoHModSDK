@@ -23,6 +23,8 @@ namespace Runtime {
     struct RegisteredMod {
         std::string modId;
         std::string title;
+        std::string version;
+        std::string author;
         CoHModSDKModContextV1 context = {};
     };
 
@@ -53,6 +55,7 @@ namespace Runtime {
     void PatchMemory(void* destination, const void* source, std::size_t size);
     void ShowModError(const CoHModSDKModContextV1* modContext, const char* message);
 
+    bool GetRegisteredModInfo(const char* modId, CoHModSDKConfigModInfoV1* outInfo);
     bool RegisterMod(HMODULE modHandle, const CoHModSDKModuleV1* module, const CoHModSDKModContextV1** outContext);
     void UnregisterMod(HMODULE modHandle);
 }

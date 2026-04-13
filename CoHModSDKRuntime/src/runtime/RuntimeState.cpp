@@ -169,8 +169,37 @@ namespace Runtime {
         MessageBoxA(nullptr, message, title.c_str(), MB_OK | MB_ICONERROR);
     }
 
+    bool GetRegisteredModInfo(const char* modId, CoHModSDKConfigModInfoV1* outInfo) {
+        if ((modId == nullptr) || (outInfo == nullptr)) {
+            return false;
+        }
+
+        outInfo->abiVersion = COHMODSDK_ABI_VERSION;
+        outInfo->size = sizeof(CoHModSDKConfigModInfoV1);
+        outInfo->modId = nullptr;
+        outInfo->name = nullptr;
+        outInfo->version = nullptr;
+        outInfo->author = nullptr;
+
+        State& state = GetState();
+        std::scoped_lock lock(state.mutex);
+        for (const auto& [moduleHandle, registeredMod] : state.registeredMods) {
+            if ((registeredMod == nullptr) || (_stricmp(registeredMod->modId.c_str(), modId) != 0)) {
+                continue;
+            }
+
+            outInfo->modId = registeredMod->modId.c_str();
+            outInfo->name = registeredMod->title.c_str();
+            outInfo->version = registeredMod->version.c_str();
+            outInfo->author = registeredMod->author.c_str();
+            return true;
+        }
+        return false;
+    }
+
     bool RegisterMod(HMODULE modHandle, const CoHModSDKModuleV1* module, const CoHModSDKModContextV1** outContext) {
-        if ((modHandle == nullptr) || (module == nullptr) || (module->modId == nullptr) || (module->name == nullptr) || (outContext == nullptr)) {
+        if ((modHandle == nullptr) || (module == nullptr) || (module->modId == nullptr) ||
+            (module->name == nullptr) || (module->version == nullptr) || (module->author == nullptr) || (outContext == nullptr)) {
             return false;
         }
 
@@ -187,6 +216,8 @@ namespace Runtime {
         auto registeredMod = std::make_unique<RegisteredMod>();
         registeredMod->modId = module->modId;
         registeredMod->title = module->name;
+        registeredMod->version = module->version;
+        registeredMod->author = module->author;
         registeredMod->context.moduleHandle = modHandle;
 
         *outContext = &registeredMod->context;
