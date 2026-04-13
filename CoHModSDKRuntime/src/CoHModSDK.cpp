@@ -55,6 +55,10 @@ namespace {
         return Runtime::GetState().configRegistry.EnumerateOptions(modId, visitor, userData);
     }
 
+    bool GetConfigModInfoImpl(const char* modId, CoHModSDKConfigModInfoV1* outInfo) {
+        return Runtime::GetRegisteredModInfo(modId, outInfo);
+    }
+
     const CoHModSDKApiV1 kApi = {
         COHMODSDK_ABI_VERSION,
         sizeof(CoHModSDKApiV1),
@@ -71,6 +75,7 @@ namespace {
         &SetConfigValueImpl,
         &EnumerateConfigModsImpl,
         &EnumerateConfigOptionsImpl,
+        &GetConfigModInfoImpl
     };
 }
 

@@ -123,6 +123,15 @@ extern "C" {
     using CoHModSDKConfigModVisitor = bool(*)(const char* modId, void* userData);
     using CoHModSDKConfigOptionVisitor = bool(*)(const CoHModSDKConfigOptionV1* option, const CoHModSDKConfigValueV1* currentValue, void* userData);
 
+    struct CoHModSDKConfigModInfoV1 {
+        std::uint32_t abiVersion;
+        std::uint32_t size;
+        const char* modId;
+        const char* name;
+        const char* version;
+        const char* author;
+    };
+
     struct CoHModSDKApiV1 {
         std::uint32_t abiVersion;
         std::uint32_t size;
@@ -139,6 +148,7 @@ extern "C" {
         bool (*SetConfigValue)(const char* modId, const char* optionId, const CoHModSDKConfigValueV1* value);
         bool (*EnumerateConfigMods)(CoHModSDKConfigModVisitor visitor, void* userData);
         bool (*EnumerateConfigOptions)(const char* modId, CoHModSDKConfigOptionVisitor visitor, void* userData);
+        bool (*GetConfigModInfo)(const char* modId, CoHModSDKConfigModInfoV1* outInfo);
     };
 
     struct CoHModSDKModuleV1 {
@@ -253,6 +263,7 @@ namespace ModSDK {
         using Schema = CoHModSDKConfigSchemaV1;
         using Type = CoHModSDKConfigType;
         using Flags = CoHModSDKConfigFlags;
+        using ModInfo = CoHModSDKConfigModInfoV1;
         using ChangedCallback = CoHModSDKConfigChangedCallback;
         using ModVisitor = CoHModSDKConfigModVisitor;
         using OptionVisitor = CoHModSDKConfigOptionVisitor;
@@ -303,6 +314,10 @@ namespace ModSDK {
 
         inline bool EnumerateOptions(const char* modId, OptionVisitor visitor, void* userData) {
             return Detail::GetApi().EnumerateConfigOptions(modId, visitor, userData);
+        }
+
+        inline bool GetModInfo(const char* modId, ModInfo* outInfo) {
+            return Detail::GetApi().GetConfigModInfo(modId, outInfo);
         }
     }
 }
