@@ -219,8 +219,20 @@ namespace ModSDK {
             return Detail::GetApi().GetRuntimeInfo();
         }
 
-        inline void Log(CoHModSDKLogLevel level, const char* message) {
-            Detail::GetApi().Log(Detail::GetModContext(), level, message);
+        inline void LogDebug(const char* message) {
+            Detail::GetApi().Log(Detail::GetModContext(), CoHModSDKLogLevel_Debug, message);
+        }
+
+        inline void LogInfo(const char* message) {
+            Detail::GetApi().Log(Detail::GetModContext(), CoHModSDKLogLevel_Info, message);
+        }
+
+        inline void LogWarning(const char* message) {
+            Detail::GetApi().Log(Detail::GetModContext(), CoHModSDKLogLevel_Warning, message);
+        }
+
+        inline void LogError(const char* message) {
+            Detail::GetApi().Log(Detail::GetModContext(), CoHModSDKLogLevel_Error, message);
         }
     }
 

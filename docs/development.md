@@ -142,7 +142,10 @@ Current public API groups:
 
 - `ModSDK::Runtime`
   - `GetInfo()`
-  - `Log(...)`
+  - `LogDebug(...)`
+  - `LogInfo(...)`
+  - `LogWarning(...)`
+  - `LogError(...)`
 - `ModSDK::Dialogs`
   - `ShowError(...)`
 - `ModSDK::Memory`
