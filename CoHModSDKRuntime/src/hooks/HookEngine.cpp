@@ -119,6 +119,14 @@ namespace {
         case 0xD1:
         case 0xD2:
         case 0xD3:
+        case 0xD8:
+        case 0xD9:
+        case 0xDA:
+        case 0xDB:
+        case 0xDC:
+        case 0xDD:
+        case 0xDE:
+        case 0xDF:
         case 0xF6:
         case 0xF7:
         case 0xFE:
@@ -296,6 +304,7 @@ namespace {
         case 0x60:
         case 0x61:
         case 0x90:
+        case 0x9B:
         case 0x98:
         case 0x99:
         case 0x9C:
