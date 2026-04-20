@@ -9,7 +9,6 @@
 #include <mutex>
 
 namespace {
-#ifdef _M_IX86
     constexpr std::size_t kMinimumPatchLength = 5;
     constexpr std::size_t kMaxInstructionLength = 15;
     constexpr std::size_t kMaxTrampolineSize = 64;
@@ -468,16 +467,9 @@ namespace {
         VirtualProtect(destination, size, oldProtect, &restoredProtect);
         return true;
     }
-#endif
 }
 
 bool HookEngine::CreateHook(void* targetFunction, void* detourFunction, void** originalFunction) {
-#ifndef _M_IX86
-    if (originalFunction != nullptr) {
-        *originalFunction = nullptr;
-    }
-    return false;
-#else
     if ((targetFunction == nullptr) || (detourFunction == nullptr)) {
         return false;
     }
@@ -513,23 +505,15 @@ bool HookEngine::CreateHook(void* targetFunction, void* detourFunction, void** o
 
     hooks.push_back(hook);
     return true;
-#endif
 }
 
 bool HookEngine::EnableHook(void* targetFunction) {
-#ifndef _M_IX86
-    return false;
-#else
     std::scoped_lock lock(mutex);
     HookEntry* hook = FindHookEntry(targetFunction);
     return (hook != nullptr) && EnableHookInternal(*hook);
-#endif
 }
 
 bool HookEngine::EnableAllHooks() {
-#ifndef _M_IX86
-    return false;
-#else
     std::scoped_lock lock(mutex);
     bool success = true;
 
@@ -538,23 +522,15 @@ bool HookEngine::EnableAllHooks() {
     }
 
     return success;
-#endif
 }
 
 bool HookEngine::DisableHook(void* targetFunction) {
-#ifndef _M_IX86
-    return false;
-#else
     std::scoped_lock lock(mutex);
     HookEntry* hook = FindHookEntry(targetFunction);
     return (hook != nullptr) && DisableHookInternal(*hook);
-#endif
 }
 
 bool HookEngine::DisableAllHooks() {
-#ifndef _M_IX86
-    return false;
-#else
     std::scoped_lock lock(mutex);
     bool success = true;
 
@@ -563,7 +539,6 @@ bool HookEngine::DisableAllHooks() {
     }
 
     return success;
-#endif
 }
 
 HookEngine::HookEntry* HookEngine::FindHookEntry(void* targetFunction) {
@@ -577,9 +552,6 @@ HookEngine::HookEntry* HookEngine::FindHookEntry(void* targetFunction) {
 }
 
 bool HookEngine::EnableHookInternal(HookEntry& hook) {
-#ifndef _M_IX86
-    return false;
-#else
     if (hook.enabled) {
         return true;
     }
@@ -601,13 +573,9 @@ bool HookEngine::EnableHookInternal(HookEntry& hook) {
 
     hook.enabled = true;
     return true;
-#endif
 }
 
 bool HookEngine::DisableHookInternal(HookEntry& hook) {
-#ifndef _M_IX86
-    return false;
-#else
     if (!hook.enabled) {
         return true;
     }
@@ -618,13 +586,9 @@ bool HookEngine::DisableHookInternal(HookEntry& hook) {
 
     hook.enabled = false;
     return true;
-#endif
 }
 
 bool HookEngine::BuildTrampoline(HookEntry& hook) {
-#ifndef _M_IX86
-    return false;
-#else
     hook.trampoline = static_cast<std::uint8_t*>(VirtualAlloc(nullptr, kMaxTrampolineSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
     if (hook.trampoline == nullptr) {
         return false;
@@ -672,5 +636,4 @@ bool HookEngine::BuildTrampoline(HookEntry& hook) {
     std::memcpy(hook.originalBytes.data(), hook.target, sourceOffset);
     hook.patchLength = sourceOffset;
     return (trampolineOffset <= kMaxTrampolineSize);
-#endif
 }
