@@ -29,7 +29,7 @@ namespace {
     BOOL CALLBACK InitializeOnceProc(PINIT_ONCE, PVOID, PVOID*) {
         Loader::LoadRuntime();
         Loader::LoadConfiguredMods();
-        Loader::NotifyModsLoaded();
+        Loader::EnableAllHooks();
         return TRUE;
     }
 }

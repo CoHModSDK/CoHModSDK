@@ -195,22 +195,6 @@ namespace Loader {
         }
     }
 
-    void NotifyModsLoaded() {
-        for (std::size_t index = 0; index < loadedMods.size();) {
-            const LoadedMod loadedMod = loadedMods[index];
-            if (COHMODSDK_HAS_FIELD(loadedMod.module, OnModsLoaded) && (loadedMod.module->OnModsLoaded != nullptr) && !loadedMod.module->OnModsLoaded()) {
-                GetLogger().LogError("Mod OnModsLoaded failed: " + loadedMod.fileName);
-                UnloadMod(loadedMod, true);
-                loadedMods.erase(loadedMods.begin() + static_cast<std::ptrdiff_t>(index));
-                continue;
-            }
-
-            GetLogger().LogDebug("Called OnModsLoaded for " + loadedMod.fileName);
-
-            ++index;
-        }
-    }
-
     void NotifyModsShutdown() {
         for (const LoadedMod& loadedMod : loadedMods) {
             if (COHMODSDK_HAS_FIELD(loadedMod.module, OnShutdown) && (loadedMod.module->OnShutdown != nullptr)) {
