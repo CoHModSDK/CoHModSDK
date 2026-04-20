@@ -469,6 +469,15 @@ namespace {
     }
 }
 
+HookEngine::~HookEngine() {
+    for (HookEntry& hook : hooks) {
+        DisableHookInternal(hook);
+        if (hook.trampoline != nullptr) {
+            VirtualFree(hook.trampoline, 0, MEM_RELEASE);
+        }
+    }
+}
+
 bool HookEngine::CreateHook(void* targetFunction, void* detourFunction, void** originalFunction) {
     if ((targetFunction == nullptr) || (detourFunction == nullptr)) {
         return false;

@@ -8,6 +8,8 @@
 
 class HookEngine {
 public:
+    ~HookEngine();
+
     bool CreateHook(void* targetFunction, void* detourFunction, void** originalFunction);
     bool EnableHook(void* targetFunction);
     bool EnableAllHooks();
