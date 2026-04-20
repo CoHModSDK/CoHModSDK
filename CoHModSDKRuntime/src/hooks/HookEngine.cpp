@@ -483,8 +483,17 @@ bool HookEngine::CreateHook(void* targetFunction, void* detourFunction, void** o
     }
 
     std::scoped_lock lock(mutex);
-    if (FindHookEntry(targetFunction) != nullptr) {
-        return false;
+    HookEntry* existing = FindHookEntry(targetFunction);
+    if (existing != nullptr) {
+        if (originalFunction != nullptr) {
+            *originalFunction = existing->detour;
+        }
+        existing->detour = static_cast<std::uint8_t*>(detourFunction);
+        if (existing->enabled) {
+            existing->enabled = false;
+            EnableHookInternal(*existing);
+        }
+        return true;
     }
 
     HookEntry hook = {};
