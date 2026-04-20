@@ -79,10 +79,6 @@ namespace {
         return true;
     }
 
-    bool OnModsLoaded() {
-        return true;
-    }
-
     void OnShutdown() {}
 
     const CoHModSDKModuleV1 kModule = {
@@ -93,7 +89,6 @@ namespace {
         "1.0.0",
         "Tosox",
         &OnInitialize,
-        &OnModsLoaded,
         &OnShutdown,
     };
 }
@@ -129,12 +124,12 @@ Current load order for an SDK mod:
 4. Windows executes the mod's `DllMain(..., DLL_PROCESS_ATTACH, ...)`.
 5. The loader calls `CoHMod_GetModule(...)`.
 6. The loader calls `CoHMod_SetContext(...)`.
-7. The loader calls `OnInitialize()`.
-8. After all listed mods are initialized, the loader calls `OnModsLoaded()`.
+7. The loader calls `OnInitialize()` — register hooks and do mod setup here.
+8. After all listed mods are initialized, the loader enables all registered hooks automatically.
 
 Practical debugging guidance:
 
-- Put breakpoints in `OnInitialize()`, `OnModsLoaded()`, hook callbacks, and config callbacks.
+- Put breakpoints in `OnInitialize()`, hook callbacks, and config callbacks.
 - Keep `DllMain` minimal. It runs before the runtime context is injected and is the wrong place for most mod logic.
 - Use `Debug > Windows > Modules` in Visual Studio to confirm that the mod DLL is loaded and that its PDB has been found.
 - If symbols do not load automatically, load them manually from the `Modules` window.
@@ -155,8 +150,6 @@ Current public API groups:
   - `PatchMemory(...)`
 - `ModSDK::Hooks`
   - `CreateHook(...)`
-  - `EnableHook(...)`
-  - `DisableHook(...)`
 - `ModSDK::Config`
   - `RegisterSchema(...)`
   - `GetValue(...)`

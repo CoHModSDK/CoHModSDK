@@ -27,14 +27,6 @@ namespace {
         return Runtime::GetState().hookEngine.CreateHook(targetFunction, detourFunction, originalFunction);
     }
 
-    bool EnableHookImpl(void* targetFunction) {
-        return Runtime::GetState().hookEngine.EnableHook(targetFunction);
-    }
-
-    bool DisableHookImpl(void* targetFunction) {
-        return Runtime::GetState().hookEngine.DisableHook(targetFunction);
-    }
-
     bool RegisterConfigSchemaImpl(const CoHModSDKConfigSchemaV1* schema) {
         return Runtime::GetState().configRegistry.RegisterSchema(schema);
     }
@@ -68,8 +60,6 @@ namespace {
         &FindPatternImpl,
         &PatchMemoryImpl,
         &CreateHookImpl,
-        &EnableHookImpl,
-        &DisableHookImpl,
         &RegisterConfigSchemaImpl,
         &GetConfigValueImpl,
         &SetConfigValueImpl,
@@ -81,6 +71,10 @@ namespace {
 
 extern "C" bool CoHModSDKRuntime_Initialize(const CoHModSDKRuntimeInitV1* init) {
     return Runtime::Initialize(init);
+}
+
+extern "C" void CoHModSDKRuntime_EnableAllHooks() {
+    Runtime::GetState().hookEngine.EnableAllHooks();
 }
 
 extern "C" void CoHModSDKRuntime_Shutdown() {
