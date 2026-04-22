@@ -165,6 +165,11 @@ Current public API groups:
   - `MakeIntValue(...)`
   - `MakeFloatValue(...)`
   - `MakeEnumValue(...)`
+- `ModSDK::Graphics` *(opt-in: include `CoHModSDKGraphics.hpp`)*
+  - `OnD3D9CreateDevice(pre, post)` — subscribe to D3D9 `CreateDevice` calls
+  - `OnDXGICreateSwapChain(pre, post)` — subscribe to DXGI `CreateSwapChain` calls
+
+The graphics API is separate from the main header to avoid pulling in D3D9/DXGI headers for mods that do not need them. Include `CoHModSDKGraphics.hpp` alongside `CoHModSDK.hpp` to use it.
 
 Internally, the runtime boundary is a versioned `extern "C"` API table exposed by `CoHModSDKRuntime.dll`.
 Mod identity is carried through an explicit runtime-owned context handle, not by inferring the caller from the return address.
@@ -180,6 +185,7 @@ The release workflow should produce two archives:
 - `CoHModSDK-Dev-<version>.zip`
   - `CoHModSDK.lib`
   - `include/CoHModSDK.hpp`
+  - `include/CoHModSDKGraphics.hpp`
 
 ## Technical Notes
 

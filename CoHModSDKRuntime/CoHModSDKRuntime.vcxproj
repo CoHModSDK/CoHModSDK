@@ -179,6 +179,7 @@
   <ItemGroup>
     <ClCompile Include="src\CoHModSDK.cpp" />
     <ClCompile Include="src\config\ConfigRegistry.cpp" />
+    <ClCompile Include="src\graphics\GraphicsHooks.cpp" />
     <ClCompile Include="src\hooks\HookEngine.cpp" />
     <ClCompile Include="src\memory\PatternScanner.cpp" />
     <ClCompile Include="src\runtime\RuntimeState.cpp" />
@@ -186,7 +187,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\CoHModSDK.hpp" />
+    <ClInclude Include="include\CoHModSDKGraphics.hpp" />
     <ClInclude Include="src\config\ConfigRegistry.hpp" />
+    <ClInclude Include="src\graphics\GraphicsHooks.hpp" />
     <ClInclude Include="src\hooks\HookEngine.hpp" />
     <ClInclude Include="src\memory\PatternScanner.hpp" />
     <ClInclude Include="src\runtime\RuntimeState.hpp" />

@@ -219,6 +219,10 @@ namespace ModSDK {
             return Detail::GetApi().GetRuntimeInfo();
         }
 
+        inline void Log(CoHModSDKLogLevel level, const char* message) {
+            Detail::GetApi().Log(Detail::GetModContext(), level, message);
+        }
+
         inline void LogDebug(const char* message) {
             Detail::GetApi().Log(Detail::GetModContext(), CoHModSDKLogLevel_Debug, message);
         }

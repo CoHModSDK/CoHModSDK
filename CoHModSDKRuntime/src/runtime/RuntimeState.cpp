@@ -5,11 +5,12 @@
 #include <cstring>
 #include <filesystem>
 
+#include "../graphics/GraphicsHooks.hpp"
 #include "../memory/PatternScanner.hpp"
 
 namespace Runtime {
     namespace {
-        constexpr char kRuntimeVersion[] = "0.4.0";
+        constexpr char kRuntimeVersion[] = "0.6.0";
 
         HMODULE ResolveHandleFromContext(const CoHModSDKModContextV1* modContext) {
             if (modContext == nullptr) {
@@ -74,6 +75,8 @@ namespace Runtime {
         state.runtimeInfo.logPath = state.logPath.c_str();
         state.runtimeInfo.gameModuleName = state.gameModuleName.c_str();
 
+        GraphicsHooks::Initialize();
+
         state.initialized = true;
         state.logger.LogInfo("CoHModSDK runtime initialized");
         return true;
@@ -87,6 +90,7 @@ namespace Runtime {
         }
 
         state.logger.LogInfo("CoHModSDK runtime shutting down");
+        GraphicsHooks::Shutdown();
         state.configRegistry.Shutdown();
         state.registeredMods.clear();
         state.initialized = false;
@@ -137,7 +141,15 @@ namespace Runtime {
     }
 
     std::optional<std::uintptr_t> FindPattern(const char* moduleName, const char* signature) {
-        return PatternScanner::Find(moduleName, signature, GetState().logger);
+        auto result = PatternScanner::Find(moduleName, signature);
+        if (!result.has_value()) {
+            result = GetState().hookEngine.FindInOriginalBytes(signature);
+        }
+        if (!result.has_value()) {
+            GetState().logger.LogError(
+                std::string("Unknown signature in module ") + moduleName + ": " + signature);
+        }
+        return result;
     }
 
     void PatchMemory(void* destination, const void* source, std::size_t size) {

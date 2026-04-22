@@ -8,6 +8,8 @@
 #include <limits>
 #include <mutex>
 
+#include "../memory/PatternScanner.hpp"
+
 namespace {
     constexpr std::size_t kMinimumPatchLength = 5;
     constexpr std::size_t kMaxInstructionLength = 15;
@@ -513,6 +515,9 @@ bool HookEngine::CreateHook(void* targetFunction, void* detourFunction, void** o
     }
 
     hooks.push_back(hook);
+    if (allHooksEnabled) {
+        EnableHookInternal(hooks.back());
+    }
     return true;
 }
 
@@ -524,6 +529,7 @@ bool HookEngine::EnableHook(void* targetFunction) {
 
 bool HookEngine::EnableAllHooks() {
     std::scoped_lock lock(mutex);
+    allHooksEnabled = true;
     bool success = true;
 
     for (HookEntry& hook : hooks) {
@@ -531,6 +537,16 @@ bool HookEngine::EnableAllHooks() {
     }
 
     return success;
+}
+
+std::optional<std::uintptr_t> HookEngine::FindInOriginalBytes(const char* signature) {
+    std::scoped_lock lock(mutex);
+    for (const HookEntry& hook : hooks) {
+        if (PatternScanner::MatchesBuffer(hook.originalBytes.data(), hook.storedBytes, signature)) {
+            return reinterpret_cast<std::uintptr_t>(hook.target);
+        }
+    }
+    return std::nullopt;
 }
 
 bool HookEngine::DisableHook(void* targetFunction) {
@@ -642,7 +658,8 @@ bool HookEngine::BuildTrampoline(HookEntry& hook) {
         trampolineOffset += sizeof(jumpBackOffset);
     }
 
-    std::memcpy(hook.originalBytes.data(), hook.target, sourceOffset);
+    std::memcpy(hook.originalBytes.data(), hook.target, hook.originalBytes.size());
+    hook.storedBytes = hook.originalBytes.size();
     hook.patchLength = sourceOffset;
     return (trampolineOffset <= kMaxTrampolineSize);
 }

@@ -1,5 +1,7 @@
 #include "../include/CoHModSDK.hpp"
+#include "../include/CoHModSDKGraphics.hpp"
 
+#include "graphics/GraphicsHooks.hpp"
 #include "runtime/RuntimeState.hpp"
 
 namespace {
@@ -67,6 +69,13 @@ namespace {
         &EnumerateConfigOptionsImpl,
         &GetConfigModInfoImpl
     };
+
+    const CoHModSDKGraphicsApiV1 kGraphicsApi = {
+        COHMODSDK_ABI_VERSION,
+        sizeof(CoHModSDKGraphicsApiV1),
+        &GraphicsHooks::RegisterD3D9CreateDevice,
+        &GraphicsHooks::RegisterDXGICreateSwapChain,
+    };
 }
 
 extern "C" bool CoHModSDKRuntime_Initialize(const CoHModSDKRuntimeInitV1* init) {
@@ -95,5 +104,14 @@ extern "C" bool CoHModSDK_GetApi(std::uint32_t abiVersion, const CoHModSDKApiV1*
     }
 
     *outApi = &kApi;
+    return true;
+}
+
+extern "C" bool CoHModSDK_GetGraphicsApi(std::uint32_t abiVersion, const CoHModSDKGraphicsApiV1** outApi) {
+    if ((outApi == nullptr) || (abiVersion > COHMODSDK_ABI_VERSION)) {
+        return false;
+    }
+
+    *outApi = &kGraphicsApi;
     return true;
 }

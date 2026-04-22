@@ -8,8 +8,6 @@
 #include <string>
 #include <vector>
 
-#include "../utils/Logger.hpp"
-
 namespace {
     std::vector<int> PatternToBytes(const char* pattern) {
         std::vector<int> bytes;
@@ -38,14 +36,13 @@ namespace {
 }
 
 namespace PatternScanner {
-    std::optional<std::uintptr_t> Find(const char* moduleName, const char* signature, Logger& logger) {
+    std::optional<std::uintptr_t> Find(const char* moduleName, const char* signature) {
         if ((moduleName == nullptr) || (signature == nullptr)) {
             return std::nullopt;
         }
 
         HMODULE moduleHandle = GetModuleHandleA(moduleName);
         if (moduleHandle == nullptr) {
-            logger.LogError("Unable to get a handle for module '" + std::string(moduleName) + "'");
             return std::nullopt;
         }
 
@@ -75,7 +72,26 @@ namespace PatternScanner {
             }
         }
 
-        logger.LogError("Unknown signature in module " + std::string(moduleName) + ": " + signature);
         return std::nullopt;
+    }
+
+    bool MatchesBuffer(const std::uint8_t* buffer, std::size_t size, const char* signature) {
+        if ((buffer == nullptr) || (signature == nullptr)) {
+            return false;
+        }
+
+        const std::vector<int> patternBytes = PatternToBytes(signature);
+        const std::size_t patternSize = patternBytes.size();
+        if ((patternSize == 0) || (size < patternSize)) {
+            return false;
+        }
+
+        for (std::size_t i = 0; i < patternSize; ++i) {
+            if ((patternBytes[i] != -1) && (buffer[i] != static_cast<std::uint8_t>(patternBytes[i]))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

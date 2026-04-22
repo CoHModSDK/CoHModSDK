@@ -1,10 +1,10 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 
-class Logger;
-
 namespace PatternScanner {
-    std::optional<std::uintptr_t> Find(const char* moduleName, const char* signature, Logger& logger);
+    std::optional<std::uintptr_t> Find(const char* moduleName, const char* signature);
+    bool MatchesBuffer(const std::uint8_t* buffer, std::size_t size, const char* signature);
 }
