@@ -250,6 +250,19 @@ namespace ModSDK {
         inline void PatchMemory(void* destination, const void* source, std::size_t size) {
             Detail::GetApi().PatchMemory(destination, source, size);
         }
+
+        inline void* GetVTableEntry(void* instance, std::size_t index) {
+            return (*static_cast<void***>(instance))[index];
+        }
+
+        template <typename T>
+        inline T ResolveExport(HMODULE module, const char* exportName) {
+            if ((module == nullptr) || (exportName == nullptr)) {
+                return nullptr;
+            }
+
+            return reinterpret_cast<T>(GetProcAddress(module, exportName));
+        }
     }
 
     namespace Hooks {

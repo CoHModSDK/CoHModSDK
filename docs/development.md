@@ -151,6 +151,8 @@ Current public API groups:
 - `ModSDK::Memory`
   - `FindPattern(...)`
   - `PatchMemory(...)`
+  - `GetVTableEntry(...)`
+  - `ResolveExport(...)`
 - `ModSDK::Hooks`
   - `CreateHook(...)`
 - `ModSDK::Config`
