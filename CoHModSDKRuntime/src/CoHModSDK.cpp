@@ -1,5 +1,7 @@
 #include "../include/CoHModSDK.hpp"
+#include "../include/CoHModSDKGraphics.hpp"
 
+#include "graphics/GraphicsHooks.hpp"
 #include "runtime/RuntimeState.hpp"
 
 namespace {
@@ -25,14 +27,6 @@ namespace {
 
     bool CreateHookImpl(void* targetFunction, void* detourFunction, void** originalFunction) {
         return Runtime::GetState().hookEngine.CreateHook(targetFunction, detourFunction, originalFunction);
-    }
-
-    bool EnableHookImpl(void* targetFunction) {
-        return Runtime::GetState().hookEngine.EnableHook(targetFunction);
-    }
-
-    bool DisableHookImpl(void* targetFunction) {
-        return Runtime::GetState().hookEngine.DisableHook(targetFunction);
     }
 
     bool RegisterConfigSchemaImpl(const CoHModSDKConfigSchemaV1* schema) {
@@ -68,8 +62,6 @@ namespace {
         &FindPatternImpl,
         &PatchMemoryImpl,
         &CreateHookImpl,
-        &EnableHookImpl,
-        &DisableHookImpl,
         &RegisterConfigSchemaImpl,
         &GetConfigValueImpl,
         &SetConfigValueImpl,
@@ -77,10 +69,21 @@ namespace {
         &EnumerateConfigOptionsImpl,
         &GetConfigModInfoImpl
     };
+
+    const CoHModSDKGraphicsApiV1 kGraphicsApi = {
+        COHMODSDK_ABI_VERSION,
+        sizeof(CoHModSDKGraphicsApiV1),
+        &GraphicsHooks::RegisterD3D9CreateDevice,
+        &GraphicsHooks::RegisterDXGICreateSwapChain,
+    };
 }
 
 extern "C" bool CoHModSDKRuntime_Initialize(const CoHModSDKRuntimeInitV1* init) {
     return Runtime::Initialize(init);
+}
+
+extern "C" void CoHModSDKRuntime_EnableAllHooks() {
+    Runtime::GetState().hookEngine.EnableAllHooks();
 }
 
 extern "C" void CoHModSDKRuntime_Shutdown() {
@@ -101,5 +104,14 @@ extern "C" bool CoHModSDK_GetApi(std::uint32_t abiVersion, const CoHModSDKApiV1*
     }
 
     *outApi = &kApi;
+    return true;
+}
+
+extern "C" bool CoHModSDK_GetGraphicsApi(std::uint32_t abiVersion, const CoHModSDKGraphicsApiV1** outApi) {
+    if ((outApi == nullptr) || (abiVersion > COHMODSDK_ABI_VERSION)) {
+        return false;
+    }
+
+    *outApi = &kGraphicsApi;
     return true;
 }

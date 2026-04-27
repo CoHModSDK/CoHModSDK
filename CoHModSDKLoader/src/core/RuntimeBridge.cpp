@@ -13,11 +13,13 @@ namespace {
     constexpr char kGameModuleName[] = "WW2Mod.dll";
 
     using RuntimeInitializeFn = bool(*)(const CoHModSDKRuntimeInitV1* init);
+    using RuntimeEnableAllHooksFn = void(*)();
     using RuntimeShutdownFn = void(*)();
     using RuntimeRegisterModFn = bool(*)(HMODULE modHandle, const CoHModSDKModuleV1* module, const CoHModSDKModContextV1** outContext);
     using RuntimeUnregisterModFn = void(*)(HMODULE modHandle);
 
     HMODULE runtimeModule = nullptr;
+    RuntimeEnableAllHooksFn fnRuntimeEnableAllHooks = nullptr;
     RuntimeShutdownFn fnRuntimeShutdown = nullptr;
     RuntimeRegisterModFn fnRuntimeRegisterMod = nullptr;
     RuntimeUnregisterModFn fnRuntimeUnregisterMod = nullptr;
@@ -36,10 +38,11 @@ namespace Loader {
         }
 
         const auto runtimeInitialize = reinterpret_cast<RuntimeInitializeFn>(GetProcAddress(runtimeModule, "CoHModSDKRuntime_Initialize"));
+        fnRuntimeEnableAllHooks = reinterpret_cast<RuntimeEnableAllHooksFn>(GetProcAddress(runtimeModule, "CoHModSDKRuntime_EnableAllHooks"));
         fnRuntimeShutdown = reinterpret_cast<RuntimeShutdownFn>(GetProcAddress(runtimeModule, "CoHModSDKRuntime_Shutdown"));
         fnRuntimeRegisterMod = reinterpret_cast<RuntimeRegisterModFn>(GetProcAddress(runtimeModule, "CoHModSDKRuntime_RegisterMod"));
         fnRuntimeUnregisterMod = reinterpret_cast<RuntimeUnregisterModFn>(GetProcAddress(runtimeModule, "CoHModSDKRuntime_UnregisterMod"));
-        if ((runtimeInitialize == nullptr) || (fnRuntimeShutdown == nullptr) || (fnRuntimeRegisterMod == nullptr) || (fnRuntimeUnregisterMod == nullptr)) {
+        if ((runtimeInitialize == nullptr) || (fnRuntimeEnableAllHooks == nullptr) || (fnRuntimeShutdown == nullptr) || (fnRuntimeRegisterMod == nullptr) || (fnRuntimeUnregisterMod == nullptr)) {
             FailFast("CoHModSDKRuntime.dll is missing required exports");
         }
 
@@ -63,6 +66,12 @@ namespace Loader {
 
         if (!runtimeInitialize(&init)) {
             FailFast("CoHModSDKRuntime.dll failed to initialize");
+        }
+    }
+
+    void EnableAllHooks() {
+        if (fnRuntimeEnableAllHooks != nullptr) {
+            fnRuntimeEnableAllHooks();
         }
     }
 

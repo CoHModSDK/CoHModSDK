@@ -79,10 +79,6 @@ namespace {
         return true;
     }
 
-    bool OnModsLoaded() {
-        return true;
-    }
-
     void OnShutdown() {}
 
     const CoHModSDKModuleV1 kModule = {
@@ -93,7 +89,6 @@ namespace {
         "1.0.0",
         "Tosox",
         &OnInitialize,
-        &OnModsLoaded,
         &OnShutdown,
     };
 }
@@ -129,12 +124,12 @@ Current load order for an SDK mod:
 4. Windows executes the mod's `DllMain(..., DLL_PROCESS_ATTACH, ...)`.
 5. The loader calls `CoHMod_GetModule(...)`.
 6. The loader calls `CoHMod_SetContext(...)`.
-7. The loader calls `OnInitialize()`.
-8. After all listed mods are initialized, the loader calls `OnModsLoaded()`.
+7. The loader calls `OnInitialize()` — register hooks and do mod setup here.
+8. After all listed mods are initialized, the loader enables all registered hooks automatically.
 
 Practical debugging guidance:
 
-- Put breakpoints in `OnInitialize()`, `OnModsLoaded()`, hook callbacks, and config callbacks.
+- Put breakpoints in `OnInitialize()`, hook callbacks, and config callbacks.
 - Keep `DllMain` minimal. It runs before the runtime context is injected and is the wrong place for most mod logic.
 - Use `Debug > Windows > Modules` in Visual Studio to confirm that the mod DLL is loaded and that its PDB has been found.
 - If symbols do not load automatically, load them manually from the `Modules` window.
@@ -147,16 +142,19 @@ Current public API groups:
 
 - `ModSDK::Runtime`
   - `GetInfo()`
-  - `Log(...)`
+  - `LogDebug(...)`
+  - `LogInfo(...)`
+  - `LogWarning(...)`
+  - `LogError(...)`
 - `ModSDK::Dialogs`
   - `ShowError(...)`
 - `ModSDK::Memory`
   - `FindPattern(...)`
   - `PatchMemory(...)`
+  - `GetVTableEntry(...)`
+  - `ResolveExport(...)`
 - `ModSDK::Hooks`
   - `CreateHook(...)`
-  - `EnableHook(...)`
-  - `DisableHook(...)`
 - `ModSDK::Config`
   - `RegisterSchema(...)`
   - `GetValue(...)`
@@ -167,6 +165,11 @@ Current public API groups:
   - `MakeIntValue(...)`
   - `MakeFloatValue(...)`
   - `MakeEnumValue(...)`
+- `ModSDK::Graphics` *(opt-in: include `CoHModSDKGraphics.hpp`)*
+  - `OnD3D9CreateDevice(pre, post)` — subscribe to D3D9 `CreateDevice` calls
+  - `OnDXGICreateSwapChain(pre, post)` — subscribe to DXGI `CreateSwapChain` calls
+
+The graphics API is separate from the main header to avoid pulling in D3D9/DXGI headers for mods that do not need them. Include `CoHModSDKGraphics.hpp` alongside `CoHModSDK.hpp` to use it.
 
 Internally, the runtime boundary is a versioned `extern "C"` API table exposed by `CoHModSDKRuntime.dll`.
 Mod identity is carried through an explicit runtime-owned context handle, not by inferring the caller from the return address.
@@ -182,6 +185,7 @@ The release workflow should produce two archives:
 - `CoHModSDK-Dev-<version>.zip`
   - `CoHModSDK.lib`
   - `include/CoHModSDK.hpp`
+  - `include/CoHModSDKGraphics.hpp`
 
 ## Technical Notes
 
